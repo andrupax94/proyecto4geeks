@@ -1,0 +1,64 @@
+path,description,tipo,padre
+deforestation-detection/,"Raíz del proyecto de detección de deforestación",carpeta,-
+deforestation-detection/README.md,"Documentación principal del proyecto con explicación general, objetivos y uso",archivo,deforestation-detection/
+deforestation-detection/requirements.txt,"Lista de dependencias Python necesarias para ejecutar el proyecto",archivo,deforestation-detection/
+deforestation-detection/.gitignore,"Archivos y carpetas que Git debe ignorar",archivo,deforestation-detection/
+deforestation-detection/pyproject.toml,"Configuración opcional del proyecto Python y herramientas asociadas",archivo,deforestation-detection/
+deforestation-detection/data/,"Carpeta principal para almacenar los datos del proyecto",carpeta,deforestation-detection/
+deforestation-detection/data/raw/,"Datos originales descargados desde la fuente, sin modificar",carpeta,deforestation-detection/data/
+deforestation-detection/data/interim/,"Datos parcialmente procesados o transformados",carpeta,deforestation-detection/data/
+deforestation-detection/data/processed/,"Datos finales listos para entrenar o evaluar modelos",carpeta,deforestation-detection/data/
+deforestation-detection/data/external/,"Datos externos de terceros utilizados como apoyo",carpeta,deforestation-detection/data/
+deforestation-detection/notebooks/,"Cuadernos para exploración, análisis y pruebas interactivas",carpeta,deforestation-detection/
+deforestation-detection/notebooks/01_eda.ipynb,"Análisis exploratorio inicial de los datos",archivo,deforestation-detection/notebooks/
+deforestation-detection/notebooks/02_preprocessing.ipynb,"Pruebas de limpieza, transformación y preparación de datos",archivo,deforestation-detection/notebooks/
+deforestation-detection/notebooks/03_modeling.ipynb,"Experimentos de modelado y entrenamiento inicial",archivo,deforestation-detection/notebooks/
+deforestation-detection/notebooks/04_evaluation.ipynb,"Evaluación de resultados y métricas del modelo",archivo,deforestation-detection/notebooks/
+deforestation-detection/src/,"Código fuente principal del proyecto",carpeta,deforestation-detection/
+deforestation-detection/src/__init__.py,"Marca el directorio src como paquete Python",archivo,deforestation-detection/src/
+deforestation-detection/src/data/,"Módulos relacionados con descarga y preparación de datos",carpeta,deforestation-detection/src/
+deforestation-detection/src/data/download.py,"Script para descargar datos desde fuentes externas",archivo,deforestation-detection/src/data/
+deforestation-detection/src/data/preprocess.py,"Lógica para limpiar y preparar los datos",archivo,deforestation-detection/src/data/
+deforestation-detection/src/data/dataset.py,"Definición de cargadores y utilidades de dataset para entrenamiento",archivo,deforestation-detection/src/data/
+deforestation-detection/src/features/,"Módulos para ingeniería y construcción de características",carpeta,deforestation-detection/src/
+deforestation-detection/src/features/build_features.py,"Extracción de características como índices de vegetación u otras métricas",archivo,deforestation-detection/src/features/
+deforestation-detection/src/models/,"Código de entrenamiento, evaluación e inferencia",carpeta,deforestation-detection/src/
+deforestation-detection/src/models/train.py,"Script principal para entrenar el modelo",archivo,deforestation-detection/src/models/
+deforestation-detection/src/models/predict.py,"Script para hacer predicciones con el modelo entrenado",archivo,deforestation-detection/src/models/
+deforestation-detection/src/models/evaluate.py,"Script para evaluar el rendimiento del modelo",archivo,deforestation-detection/src/models/
+deforestation-detection/src/models/architectures.py,"Definición de arquitecturas como U-Net, CNN u otras",archivo,deforestation-detection/src/models/
+deforestation-detection/src/visualization/,"Utilidades para mostrar resultados y gráficos",carpeta,deforestation-detection/src/
+deforestation-detection/src/visualization/visualize.py,"Funciones para mapas, comparativas y superposición de resultados",archivo,deforestation-detection/src/visualization/
+deforestation-detection/src/utils/,"Utilidades generales del proyecto",carpeta,deforestation-detection/src/
+deforestation-detection/src/utils/config.py,"Configuración centralizada del proyecto",archivo,deforestation-detection/src/utils/
+deforestation-detection/src/utils/logger.py,"Configuración y uso de registros o logs",archivo,deforestation-detection/src/utils/
+deforestation-detection/models/,"Carpeta para guardar modelos entrenados",carpeta,deforestation-detection/
+deforestation-detection/models/checkpoints/,"Puntos de guardado intermedios durante el entrenamiento",carpeta,deforestation-detection/models/
+deforestation-detection/models/final/,"Modelo final listo para inferencia o despliegue",carpeta,deforestation-detection/models/
+deforestation-detection/reports/,"Informes, gráficos y resultados del proyecto",carpeta,deforestation-detection/
+deforestation-detection/reports/figures/,"Figuras, gráficas e imágenes generadas durante el análisis",carpeta,deforestation-detection/reports/
+deforestation-detection/reports/metrics/,"Resultados de métricas y tablas de evaluación",carpeta,deforestation-detection/reports/
+deforestation-detection/experiments/,"Experimentos, pruebas y comparativas de modelos",carpeta,deforestation-detection/
+deforestation-detection/experiments/exp_001_baseline/,"Primer experimento base o línea inicial",carpeta,deforestation-detection/experiments/
+deforestation-detection/experiments/exp_002_unet/,"Segundo experimento centrado en U-Net",carpeta,deforestation-detection/experiments/
+deforestation-detection/experiments/tracking.csv,"Registro tabular de experimentos y métricas",archivo,deforestation-detection/experiments/
+deforestation-detection/tests/,"Pruebas automáticas del proyecto",carpeta,deforestation-detection/
+deforestation-detection/tests/test_data.py,"Pruebas relacionadas con carga y validación de datos",archivo,deforestation-detection/tests/
+deforestation-detection/deployment/,"Carpeta separada para el despliegue de la aplicación web",carpeta,deforestation-detection/
+deforestation-detection/deployment/webapp/,"Aplicación web de despliegue separada del núcleo de ML",carpeta,deforestation-detection/deployment/
+deforestation-detection/deployment/webapp/README.md,"Documentación de la aplicación web",archivo,deforestation-detection/deployment/webapp/
+deforestation-detection/deployment/webapp/package.json,"Configuración de dependencias y scripts del frontend",archivo,deforestation-detection/deployment/webapp/
+deforestation-detection/deployment/webapp/index.html,"Archivo HTML principal del frontend",archivo,deforestation-detection/deployment/webapp/
+deforestation-detection/deployment/webapp/src/,"Código fuente del frontend web",carpeta,deforestation-detection/deployment/webapp/
+deforestation-detection/deployment/webapp/src/main.tsx,"Punto de entrada principal de la aplicación web",archivo,deforestation-detection/deployment/webapp/src/
+deforestation-detection/deployment/webapp/src/App.tsx,"Componente raíz de la interfaz web",archivo,deforestation-detection/deployment/webapp/src/
+deforestation-detection/deployment/webapp/src/components/,"Componentes reutilizables de la interfaz",carpeta,deforestation-detection/deployment/webapp/src/
+deforestation-detection/deployment/webapp/src/components/MapViewer.tsx,"Componente para visualizar mapas o imágenes satelitales",archivo,deforestation-detection/deployment/webapp/src/components/
+deforestation-detection/deployment/webapp/src/components/ImageCompare.tsx,"Componente para comparar imágenes antes y después",archivo,deforestation-detection/deployment/webapp/src/components/
+deforestation-detection/deployment/webapp/src/services/,"Servicios de comunicación con la API",carpeta,deforestation-detection/deployment/webapp/src/
+deforestation-detection/deployment/webapp/src/services/api.ts,"Cliente para conectarse al backend y obtener predicciones",archivo,deforestation-detection/deployment/webapp/src/services/
+deforestation-detection/deployment/webapp/backend/,"Backend opcional para exponer la inferencia como API",carpeta,deforestation-detection/deployment/webapp/
+deforestation-detection/deployment/webapp/backend/main.py,"Punto de entrada del backend",archivo,deforestation-detection/deployment/webapp/backend/
+deforestation-detection/deployment/webapp/backend/routes/,"Rutas o endpoints de la API",carpeta,deforestation-detection/deployment/webapp/backend/
+deforestation-detection/deployment/webapp/backend/routes/predict.py,"Endpoint para realizar predicciones",archivo,deforestation-detection/deployment/webapp/backend/routes/
+deforestation-detection/deployment/webapp/backend/schemas/,"Esquemas de entrada y salida de la API",carpeta,deforestation-detection/deployment/webapp/backend/

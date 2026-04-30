@@ -1,2 +1,56 @@
-.git
-.vscode
+
+# description: Rules to exclude files and folders from version control; covers binaries virtualenvs and build artifacts
+# owner: Dev
+# priority: Minimum
+# notes: Update when adding new tools or binaries for RPi5 or CI
+# context: Version control rules
+
+# ===== Python =====
+**/__pycache__/**
+
+**pycache/**
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ===== Virtualenv =====
+
+venv/
+.env/
+.env.local
+
+# ===== OS =====
+
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+
+*.log
+
+# ===== Modelos LLM (NO subir a Git) =====
+
+*.gguf
+models/
+model-*.bin
+
+# ===== IDE =====
+
+.vscode/
+.idea/
+*.swp
+
+# ===== Cache =====
+.git/
+.cache/
+.pytest_cache/
+
+# ===== Configuración sensible =====
+
+config.local.json
+secrets.json
+settings.local.py
