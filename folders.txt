@@ -1,0 +1,80 @@
+deforestation-detection/
+│
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── pyproject.toml              # opcional pero recomendable
+│
+├── data/
+│   ├── raw/                   # datos originales (NO tocar)
+│   ├── interim/               # datos procesados parcialmente
+│   ├── processed/             # datos listos para modelar
+│   └── external/              # datos de terceros (ej: :contentReference[oaicite:0]{index=0})
+│
+├── notebooks/
+│   ├── 01_eda.ipynb
+│   ├── 02_preprocessing.ipynb
+│   ├── 03_modeling.ipynb
+│   └── 04_evaluation.ipynb
+│
+├── src/
+│   ├── __init__.py
+│   │
+│   ├── data/
+│   │   ├── download.py        # descarga desde :contentReference[oaicite:1]{index=1} / :contentReference[oaicite:2]{index=2}
+│   │   ├── preprocess.py
+│   │   └── dataset.py         # loaders (PyTorch / TF)
+│   │
+│   ├── features/
+│   │   └── build_features.py  # extracción (NDVI, etc.)
+│   │
+│   ├── models/
+│   │   ├── train.py
+│   │   ├── predict.py
+│   │   ├── evaluate.py
+│   │   └── architectures.py   # U-Net, CNN, etc.
+│   │
+│   ├── visualization/
+│   │   └── visualize.py       # mapas, overlays, comparativas
+│   │
+│   └── utils/
+│       ├── config.py
+│       └── logger.py
+│
+├── models/                    # modelos entrenados
+│   ├── checkpoints/
+│   └── final/
+│
+├── reports/
+│   ├── figures/
+│   └── metrics/
+│
+├── experiments/
+│   ├── exp_001_baseline/
+│   ├── exp_002_unet/
+│   └── tracking.csv          # o usa MLflow
+│
+├── tests/
+│   └── test_data.py
+│
+└── deployment/
+    └── webapp/               # 👈 separado del core
+        ├── README.md
+        ├── package.json      # si usas React/Vite
+        ├── index.html
+        │
+        ├── src/
+        │   ├── main.tsx / main.js
+        │   ├── App.tsx
+        │   ├── components/
+        │   │   ├── MapViewer.tsx
+        │   │   └── ImageCompare.tsx
+        │   │
+        │   └── services/
+        │       └── api.ts    # conecta con backend
+        │
+        └── backend/         # opcional (FastAPI)
+            ├── main.py
+            ├── routes/
+            │   └── predict.py
+            └── schemas/
