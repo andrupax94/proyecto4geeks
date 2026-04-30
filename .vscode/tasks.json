@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "EnsureWSLg",
+            "type": "shell",
+            "command": "wsl.exe -d Ubuntu -e bash -c 'exit'",
+            "windows": {
+                "command": "wsl.exe -d Ubuntu -e bash -c 'exit'"
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "runOptions": {
+                "runOn": "default"
+            }
+        }
+    ]
+}
