@@ -1,0 +1,32 @@
+# Core
+numpy==1.26.4
+pandas==2.2.2
+
+# Visualización
+matplotlib==3.8.4
+seaborn==0.13.2
+
+# Machine Learning clásico
+scikit-learn==1.5.0
+
+# Deep Learning (PyTorch)
+torch==2.3.0
+torchvision==0.18.0
+torchaudio==2.3.0
+
+# Computer Vision
+opencv-python==4.9.0.80
+Pillow==10.3.0
+
+# Progreso / utilidades
+tqdm==4.66.4
+
+# Notebooks (opcional pero útil)
+jupyter==1.0.0
+ipykernel==6.29.4
+
+# Manejo de configuraciones
+pyyaml==6.0.1
+
+# Métricas extra (opcional)
+torchmetrics==1.4.0

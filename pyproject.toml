@@ -1,0 +1,52 @@
+[project]
+name = "urban-audio-ml"
+version = "0.1.0"
+description = "Proyecto de Data Science con PyTorch para clasificación (CNN)"
+authors = [
+    { name = "Tu Nombre" }
+]
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+
+dependencies = [
+    "numpy==1.26.4",
+    "pandas==2.2.2",
+    "matplotlib==3.8.4",
+    "seaborn==0.13.2",
+    "scikit-learn==1.5.0",
+
+    "torch==2.3.0",
+    "torchvision==0.18.0",
+    "torchaudio==2.3.0",
+
+    "opencv-python==4.9.0.80",
+    "Pillow==10.3.0",
+
+    "tqdm==4.66.4",
+    "pyyaml==6.0.1",
+    "torchmetrics==1.4.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter",
+    "ipykernel",
+    "black",
+    "ruff"
+]
+
+---
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+---
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I"]
