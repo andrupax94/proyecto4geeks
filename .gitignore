@@ -44,13 +44,18 @@ model-*.bin
 .idea/
 *.swp
 
+data/raw/*.wav
+data/raw/*/*.wav
+data/raw/*/*/*.wav
+
 # ===== Cache =====
 .git/
 .cache/
 .pytest_cache/
 
 # ===== Configuración sensible =====
-
+data/raw/**/*.wav
 config.local.json
 secrets.json
 settings.local.py
+
