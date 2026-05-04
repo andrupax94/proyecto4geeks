@@ -1,0 +1,4 @@
+audio -> nombre del archivo
+folder -> carpeta donde esta el archivo
+label -> nombre de clase no homuna
+human_label -> nombre de clase humana
