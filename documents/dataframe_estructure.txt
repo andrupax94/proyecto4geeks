@@ -2,3 +2,9 @@ audio -> nombre del archivo
 folder -> carpeta donde esta el archivo
 label -> nombre de clase no homuna
 human_label -> nombre de clase humana
+labels -> lista de nombres de clase no homuna
+human_labels -> lista de nombres de clase humana
+sample_rate -> Frecuencia de muestreo
+channels -> Mono o Estéreo
+dataset_source -> Fuente del audio que data set lo tiene
+bit_depth -> Profundidad de bits
