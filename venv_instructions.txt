@@ -1,0 +1,5 @@
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -e .
+pip install ipykernel
+python -m ipykernel install --user --name proyecto4geeks --display-name "Python (proyecto4geeks)"

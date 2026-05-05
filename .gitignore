@@ -47,12 +47,12 @@ model-*.bin
 data/raw/*.wav
 data/raw/*/*.wav
 data/raw/*/*/*.wav
-
+proyecto4geeks.egg-info/
 # ===== Cache =====
 .git/
 .cache/
 .pytest_cache/
-
+.venv/
 # ===== Configuración sensible =====
 data/raw/**/*.wav
 config.local.json

@@ -1,0 +1,97 @@
+┣ 📂.vscode
+┣ 📂data
+┃ ┣ 📂external
+┃ ┣ 📂interim
+┃ ┃ ┣ 📂8k
+┃ ┃ ┣ 📂zenodo
+┃ ┃ ┣ 📜8k.csv
+┃ ┃ ┗ 📜zenodo.csv
+┃ ┣ 📂processed
+┃ ┗ 📂raw
+┃   ┣ 📂UrbanSound8k
+┃   ┃ ┣ 📂fold1
+┃   ┃ ┣ 📂fold10
+┃   ┃ ┣ 📂fold11
+┃   ┃ ┣ 📂fold2
+┃   ┃ ┣ 📂fold3
+┃   ┃ ┣ 📂fold4
+┃   ┃ ┣ 📂fold5
+┃   ┃ ┣ 📂fold6
+┃   ┃ ┣ 📂fold7
+┃   ┃ ┣ 📂fold8
+┃   ┃ ┗ 📂fold9
+┃   ┣ 📂zenodo
+┃   ┃ ┗ 📂FSD50K.dev_audio
+┃   ┣ 📜dataset.csv
+┃   ┗ 📜UrbanSound8K.csv
+┣ 📂deployment
+┃ ┣ 📂webapp
+┃ ┃ ┣ 📂backend
+┃ ┃ ┃ ┣ 📂routes
+┃ ┃ ┃ ┃ ┣ 📜__init__.py
+┃ ┃ ┃ ┃ ┗ 📜predict.py
+┃ ┃ ┃ ┣ 📂schemas
+┃ ┃ ┃ ┣ 📜__init__.py
+┃ ┃ ┃ ┗ 📜main.py
+┃ ┃ ┣ 📂src
+┃ ┃ ┃ ┣ 📂components
+┃ ┃ ┃ ┃ ┣ 📜ImageCompare.tsx
+┃ ┃ ┃ ┃ ┗ 📜MapViewer.tsx
+┃ ┃ ┃ ┣ 📂services
+┃ ┃ ┃ ┃ ┗ 📜api.ts
+┃ ┃ ┃ ┣ 📜App.tsx
+┃ ┃ ┃ ┗ 📜main.tsx
+┃ ┃ ┣ 📜__init__.py
+┃ ┃ ┣ 📜index.html
+┃ ┃ ┣ 📜package.json
+┃ ┃ ┗ 📜README.md
+┃ ┗ 📜__init__.py
+┣ 📂documents
+┃ ┣ 📂jupiter_references_bibliograficas
+┃ ┃ ┗ 📜UrbanSound8k_data_exploration.ipynb
+┃ ┣ 📜clases.xlsx
+┃ ┣ 📜dataframe_estructure.txt
+┃ ┣ 📜dataset_resources_link.csv
+┃ ┣ 📜ideas.csv
+┃ ┣ 📜intrucciones de carpetas.txt
+┃ ┗ 📜Planteamiento del problema.docx
+┣ 📂experiments
+┃ ┣ 📂exp_001_baseline
+┃ ┣ 📂exp_002_unet
+┃ ┗ 📜tracking.csv
+┣ 📂models
+┣ 📂notebooks
+┃ ┣ 📜00_building_ds.ipynb
+┃ ┣ 📜01_eda.ipynb
+┃ ┣ 📜02_preprocessing.ipynb
+┃ ┣ 📜03_modeling.ipynb
+┃ ┗ 📜04_evaluation.ipynb
+┣ 📂reports
+┃ ┣ 📂figures
+┃ ┗ 📂metrics
+┣ 📂src
+┃ ┣ 📂data
+┃ ┃ ┣ 📂build
+┃ ┃ ┣ 📜__init__.py
+┃ ┃ ┣ 📜download.py
+┃ ┃ ┗ 📜preprocess.py
+┃ ┣ 📂features
+┃ ┃ ┣ 📜__init__.py
+┃ ┃ ┗ 📜build_features.py
+┃ ┣ 📂models
+┃ ┣ 📂utils
+┃ ┃ ┣ 📜__init__.py
+┃ ┃ ┣ 📜config.py
+┃ ┃ ┗ 📜logger.py
+┃ ┣ 📂visualization
+┃ ┃ ┣ 📜__init__.py
+┃ ┃ ┗ 📜visualize.py
+┃ ┗ 📜__init__.py
+┣ 📂tests
+┃ ┣ 📜__init__.py
+┃ ┗ 📜test_data.py
+┣ 📜.gitignore
+┣ 📜ARQUITECTURE.md
+┣ 📜pyproject.toml
+┣ 📜README.md
+┗ 📜requirements.txt

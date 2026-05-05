@@ -1,40 +1,15 @@
 {
-    // Use IntelliSense para saber los atributos posibles.
-    // Mantenga el puntero para ver las descripciones de los existentes atributos.
-    // Para más información, visite: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Ejecutar MAIN",
+            "name": "Python: Ejecutar como módulo (src)",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            // Ejecuta el archivo actual como módulo
+            "module": "src.${relativeFileDirname}/${fileBasenameNoExtension}",
+            // Asegura que la raíz del proyecto es el cwd
+            "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
-        },
-        {
-            "name": "Python: Debug en TV (Pantalla Local)",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/chimuelo_launcher/launcher_template.py",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/chimuelo_launcher",
-            "env": {
-                "DISPLAY": ":0",
-                "PYTHONPATH": "${workspaceFolder}"
-            },
-            "stopOnEntry": false
-        },
-        {
-            "name": "Python: Launcher Auto-WSLg",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/chimuelo_launcher/main.py",
-            "env": {
-                "DISPLAY": ":0",
-                "QT_QPA_PLATFORM": "xcb",
-                "CHIMUELO_DEBUG": "1"
-            },
-            "preLaunchTask": "EnsureWSLg"
         }
     ]
 }
