@@ -1,0 +1,5 @@
+1) Scripts para tratar los datos crudos src\data\build\<nombredeldataset>\
+2) Scripts generales para los datos crudos src\data\build\dataset.py
+3) Carpeta para los audios crudos (los descargados sin tocar) data\raw\<nombredeldataset>\
+4) Carpeta para los audios filtrados (luego de quedarnos con los que nos interesan) data\interin\<nombredeldataset>\
+5) Carpeta para los csv listos (luego de convertirlos a las columnas que nos interezan) data\interin\
