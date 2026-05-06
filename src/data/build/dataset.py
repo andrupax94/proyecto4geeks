@@ -156,6 +156,7 @@ class Dataset:
 
         return sinonimos
 
+    
     # --- EJEMPLO DE CONFIGURACIÓN ---
     if __name__ == "__main__":
         script_end = Path(__file__).resolve().parents[3] / "data"

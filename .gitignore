@@ -15,7 +15,7 @@
 *.egg-info/
 dist/
 .eggs/
-
+pyproject.toml
 # ===== Virtualenv =====
 
 venv/

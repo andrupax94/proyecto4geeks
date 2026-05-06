@@ -156,7 +156,7 @@ def generar_csv_audio(
 # --- EJEMPLO DE CONFIGURACIÓN ---
 if __name__ == "__main__":
     script_end = Path(__file__).resolve().parents[4] / "data"
-    script_end_interim = script_end / "interim"
+    script_end_raw = script_end / "raw"
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Cargar tu dataframe (asegúrate de que dev.csv esté en la misma carpeta)
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     sinonimos = Dataset.cargar_sinonimos_csv(script_dir + "/../sinonimosV2.csv")
 
     # Clases que quieres conservar (ahora puedes usar los nombres oficiales)
-    nombre_salida = os.path.join(script_end_interim, "zenodo.csv")
+    nombre_salida = os.path.join(script_end_raw, "zenodo.csv")
     df_res = generar_csv_audio(
         df=df_original,
         col_labels='labels',
