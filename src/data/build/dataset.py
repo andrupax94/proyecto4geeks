@@ -1,12 +1,9 @@
 import pandas as pd
 import os
-import json
 from pathlib import Path
-from tinytag import TinyTag
 import shutil
-from tqdm import tqdm # Opcional: para ver una barra de progreso    
-import soundfile as sf
-import numpy as np
+from tqdm import tqdm 
+from src.data.build.metadata import MetadataEX
 class Dataset:
     def generate_filter_audio(csv_path, ruta_origen, ruta_destino):
         """
@@ -63,82 +60,6 @@ class Dataset:
         print(f"No encontrados en origen: {archivos_no_encontrados}")
         print(f"Ubicación destino: {os.path.abspath(ruta_destino)}")
 
-    def generate_metadata_audio(csv_path, dataset_name, folder):
-        """
-        Lee un CSV, extrae metadatos de los audios y sobrescribe el archivo.
-        
-        Args:
-            csv_path (str): Ruta al archivo CSV (ej: 'dataset_final.csv')
-            dataset_name (str): Nombre de la fuente (ej: 'AudioSet_Zenodo')
-        """
-        if not os.path.exists(csv_path):
-            print(f"Error: No se encontró el CSV en {csv_path}")
-            return
-
-        # 1. Cargar el dataframe
-        df = pd.read_csv(csv_path)
-
-        #----DECIBELES-----------------------------------------
-        def max_dbfs(file_path, block_size=65536):
-            max_val = 0.0
-            
-            with sf.SoundFile(file_path) as f:
-                for block in f.blocks(blocksize=block_size):
-                    max_val = max(max_val, np.max(np.abs(block)))
-            
-            if max_val == 0:
-                return -np.inf
-            
-            return 20 * np.log10(max_val)
-        
-        
-        # Listas para almacenar los metadatos temporalmente
-        durations = []
-        sample_rates = []
-        channels = []
-        bit_depths = []
-
-        print(f"Procesando metadatos para {len(df)} archivos...")
-
-        # 2. Iterar por cada fila para leer el archivo físico
-        for index, row in df.iterrows():
-            # Usamos la columna 'path' que creamos en el script anterior
-            ruta_audio = folder / row['path']
-            
-            if os.path.exists(ruta_audio):
-                try:
-                    tag = TinyTag.get(ruta_audio)
-                    durations.append(round(tag.duration, 3))
-                    sample_rates.append(tag.samplerate)
-                    channels.append("Stereo" if tag.channels > 1 else "Mono")
-                    bit_depths.append(getattr(tag, 'bitdepth', 16)) # Por defecto 16 si no lo detecta
-                except Exception as e:
-                    print(f"Error leyendo {ruta_audio}: {e}")
-                    durations.append(0.0)
-                    sample_rates.append(0)
-                    channels.append("Unknown")
-                    bit_depths.append(0)
-            else:
-                # Si el archivo no existe en la ruta especificada
-                durations.append(None)
-                sample_rates.append(None)
-                channels.append("File Not Found")
-                bit_depths.append(None)
-
-        # 3. Asignar las nuevas columnas
-        df['duration'] = durations
-        df['sample_rate'] = sample_rates
-        df['channels'] = channels
-        df['bit_depth'] = bit_depths
-        df['dataset_source'] = dataset_name
-
-        # 4. Sobrescribir el CSV original
-        try:
-            df.to_csv(csv_path, index=False, quoting=1)
-            print(f"--- CSV actualizado con éxito ---")
-            print(f"Ruta: {os.path.abspath(csv_path)}")
-        except PermissionError:
-            print("Error: No se pudo sobrescribir el CSV. Asegúrate de que no esté abierto en Excel.")
 
     def generate_enviroment_columns():
         pass
@@ -237,13 +158,19 @@ class Dataset:
 
     # --- EJEMPLO DE CONFIGURACIÓN ---
     if __name__ == "__main__":
-        script_end = Path(__file__).resolve().parents[2] / "data"
+        script_end = Path(__file__).resolve().parents[3] / "data"
         script_end_interim = script_end / "interim"
-        script_end_data = script_end / "data"
+        script_end_raw = script_end / "raw"
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        nombre_salida = os.path.join(script_end, "zenodo.csv")
+        nombre_salida = os.path.join(script_end_interim, "zenodo.csv")
         
-        
+        metadata = MetadataEX(
+            csv_path=nombre_salida,
+            dataset_name="zenodo",
+            folder=script_end_raw
+        )
+
+        metadata.generate_metadata_audio()
         # generate_filter_audio(
         #     csv_path=nombre_salida,
         #     ruta_origen=script_end_data, 
