@@ -1,0 +1,22 @@
+columna,significado 
+id_label, id de la clase
+audio, nombre del archivo
+folder, carpeta donde esta el archivo
+label, nombre de clase no homuna
+human_label, nombre de clase humana
+labels, lista de nombres de clase no homuna
+human_labels, lista de nombres de clase humana
+danger_level, nivel de peligro
+split, train o test
+dataset_source, Fuente del audio que data set lo tiene
+duration, duracion del audio en segundos
+sample_rate, Frecuencia de muestreo
+channels, Mono o Estéreo
+bit_depth, Profundidad de bits
+bit_velocity, velocidad de bit
+siz,tamañokbites
+date_modification, fecha de modificacion
+environment, categoria de entorno del sonido bocina de auto: = "calle" "aire acondicionado"= "interior"
+emergency, true o false
+
+

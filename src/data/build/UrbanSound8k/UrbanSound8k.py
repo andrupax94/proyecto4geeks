@@ -8,9 +8,7 @@ if __name__ == "__main__":
     script_end = Path(__file__).resolve().parents[4] / "data"
     script_end_interim = script_end / "interim"
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    
     # Cargar tu dataframe (asegúrate de que dev.csv esté en la misma carpeta)
-
     df_original = pd.read_csv(os.path.join(script_dir, "UrbanSound8K.csv"))
     sinonimos = Dataset.cargar_sinonimos_csv(script_dir + "/sinonimosV2.csv")
 
