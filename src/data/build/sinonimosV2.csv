@@ -58,6 +58,8 @@ voice,Female_speech_and_woman_speaking,False,interior
 voice,Male_speech_and_man_speaking,False,interior
 voice,Child_speech_and_kid_speaking,False,interior
 voice,Speech_synthesizer,False,interior
+voice,RAVDESS_surprised,False,interior
+voice,Surprised_speech,False,interior
 singing,Singing,False,interior
 singing,Male_singing,False,interior
 singing,Female_singing,False,interior
@@ -70,6 +72,10 @@ laughter,Laughter,False,indefinida
 yell,Yell,False,indefinida
 yell,Shout,False,indefinida
 yell,Screaming,False,indefinida
+yell,RAVDESS_angry,True,interior
+yell,Angry_speech,True,interior
+yell,RAVDESS_fearful,True,interior
+yell,Fearful_speech,True,interior
 breathing,Breathing,False,interior
 breathing,Gasp,False,interior
 breathing,Sigh,False,interior
@@ -78,6 +84,8 @@ breathing,Sneeze,False,interior
 breathing,Respiratory_sounds,False,interior
 breathing,Hiss,False,interior
 crying,Crying_and_sobbing,False,interior
+crying,RAVDESS_disgust,True,interior
+crying,Disgust_speech,True,interior
 alert_higth,Alarm,True,indefinida
 alert_higth,Siren,True,indefinida
 alert_low,Ringtone,False,indefinida

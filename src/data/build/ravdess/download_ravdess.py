@@ -2,13 +2,19 @@ import os
 import shutil
 
 # ==========================
-# RUTA BASE (donde está el script)
+# Carpeta donde está el script
 # ==========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# carpeta destino
+# 📂 Dataset RAVDESS (tu ruta actual)
+SOURCE = os.path.join(BASE_DIR, "Audio_Speech_Actors_01-24")
+
+# 📂 Carpeta destino
 DEST = os.path.join(BASE_DIR, "sonidos")
 
+# ==========================
+# Emociones útiles
+# ==========================
 emociones = {
     "05": "angry",
     "06": "fearful",
@@ -16,22 +22,18 @@ emociones = {
     "08": "surprised"
 }
 
-# crear carpetas destino
+# Crear carpetas destino
 for emocion in emociones.values():
     os.makedirs(os.path.join(DEST, emocion), exist_ok=True)
 
-print("Buscando audios...")
+print("🔎 Buscando audios RAVDESS...")
 
 contador = 0
 
 # ==========================
-# BUSCAR EN TODAS LAS SUBCARPETAS
+# Recorrer actores
 # ==========================
-for root, dirs, files in os.walk(BASE_DIR):
-
-    # evitar copiar desde sonidos nuevamente
-    if "sonidos" in root:
-        continue
+for root, _, files in os.walk(SOURCE):
 
     for file in files:
 
@@ -45,10 +47,12 @@ for root, dirs, files in os.walk(BASE_DIR):
 
                 if codigo in emociones:
 
-                    emocion = emociones[codigo]
-
                     origen = os.path.join(root, file)
-                    destino = os.path.join(DEST, emocion, file)
+                    destino = os.path.join(
+                        DEST,
+                        emociones[codigo],
+                        file
+                    )
 
                     shutil.copy2(origen, destino)
                     contador += 1
