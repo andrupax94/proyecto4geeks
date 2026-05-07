@@ -17,7 +17,7 @@ dist/
 .eggs/
 pyproject.toml
 # ===== Virtualenv =====
-
+rocm_env
 venv/
 .env/
 .env.local
