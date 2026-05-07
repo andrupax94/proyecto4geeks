@@ -42,7 +42,7 @@ model-*.bin
 .vscode/
 .idea/
 *.swp
-
+src/data/build/ESC50/ESC-50
 data/raw/*.wav
 data/raw/*/*.wav
 data/raw/*/*/*.wav
@@ -54,6 +54,8 @@ proyecto4geeks.egg-info/
 .venv/
 # ===== Configuración sensible =====
 data/raw/**/*.wav
+data/raw/**/*.m4a
+data/raw/**/*.webm
 config.local.json
 secrets.json
 settings.local.py

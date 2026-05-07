@@ -6,7 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "proyecto4geeks"
 version = "0.1.0"
 description = "Audio detection project"
-authors = [{name = "Alessandra"},{name="Natalia"},{ name = "Andres", }]
+authors = [
+    {name = "Alessandra"},
+    {name = "Natalia"},
+    {name = "Andres"}
+]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -17,5 +21,6 @@ dependencies = [
   "tqdm>=4.65",
   "datasets>=2.0"
 ]
+
 [tool.setuptools]
 packages = ["src"]

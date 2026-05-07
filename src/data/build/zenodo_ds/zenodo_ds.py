@@ -234,6 +234,7 @@ def generar_csv_audio(
             lambda row: os.path.join(f"{ruta_carpeta}/fold{row['fold']}", row["audio"]),
             axis=1
         )
+        
     else:
         df["path"] = df["audio"].apply(lambda x: os.path.join(ruta_carpeta, x))
 

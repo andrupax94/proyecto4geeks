@@ -211,19 +211,26 @@ class Dataset:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         
         
-        nombre_salida = os.path.join(script_end_raw, "zenodo.csv")
+        # nombre_salida = os.path.join(script_end_raw, "zenodo.csv")
         
         # metadata = MetadataEX(
         #     csv_path=nombre_salida,
         #     dataset_name="zenodo",
         #     folder=script_end_raw
         # )
-        # metadata.generate_metadata_audio()
-        nombre_salida = os.path.join(script_end_raw, "UrbanSound8k.csv")
+    
+        # nombre_salida = os.path.join(script_end_raw, "UrbanSound8k.csv")
+        
+        # metadata = MetadataEX(
+        #     csv_path=nombre_salida,
+        #     dataset_name="UrbanSound8k",
+        #     folder=script_end_raw
+        # )
+        nombre_salida = os.path.join(script_end_raw, "ESC50.csv")
         
         metadata = MetadataEX(
             csv_path=nombre_salida,
-            dataset_name="UrbanSound8k",
+            dataset_name="ESC50",
             folder=script_end_raw
         )
         metadata.generate_metadata_audio()
