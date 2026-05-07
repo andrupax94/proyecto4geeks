@@ -155,30 +155,77 @@ class Dataset:
             print("Sin conflictos detectados 👍")
 
         return sinonimos
+    def preparar_dataframe(dato):
+        """
+        Si es un string, lo lee como CSV. 
+        Si ya es un DataFrame, lo devuelve tal cual.
+        """
+        if isinstance(dato, pd.DataFrame):
+            return dato
+        elif isinstance(dato, (str, Path)):
+            return pd.read_csv(str(dato))
+        else:
+            raise ValueError(f"Formato no soportado: {type(dato)}. Debe ser una ruta (str) o un DataFrame.")
 
-    
+
+    def concatenar_y_ordenar_csvs(archivo1, archivo2, columna_orden, archivo_salida):
+        """
+        Concatena dos archivos CSV con las mismas columnas, los ordena,
+        guarda el resultado y elimina los archivos de entrada.
+        """
+        try:
+            df1 = Dataset.preparar_dataframe(archivo1)
+            df2 = Dataset.preparar_dataframe(archivo2)
+
+            df_resultado = pd.concat([df1, df2], ignore_index=True)
+
+            if columna_orden in df_resultado.columns:
+                df_resultado = df_resultado.sort_values(by=columna_orden)
+                print(f"Ordenado por la columna: '{columna_orden}'")
+            else:
+                print(f"Advertencia: La columna '{columna_orden}' no existe. Se guardará sin ordenar.")
+
+            df_resultado.to_csv(archivo_salida, index=False)
+            print(f"Éxito: Archivo guardado como '{archivo_salida}'")
+
+            # Eliminar archivos originales solo después de guardar correctamente
+            for archivo in (archivo1, archivo2):
+                if os.path.exists(archivo):
+                    os.remove(archivo)
+                    print(f"Eliminado: '{archivo}'")
+                else:
+                    print(f"No existe para eliminar: '{archivo}'")
+
+        except FileNotFoundError:
+            print("Error: Uno de los archivos no fue encontrado.")
+        except Exception as e:
+            print(f"Ocurrió un error inesperado: {e}")
+
+    # Ejemplo de uso:
+    # concatenar_y_ordenar_csvs('datos_enero.csv', 'datos_febrero.csv', 'fecha', 'reporte_final.csv')
     # --- EJEMPLO DE CONFIGURACIÓN ---
     if __name__ == "__main__":
         script_end = Path(__file__).resolve().parents[3] / "data"
         script_end_interim = script_end / "interim"
         script_end_raw = script_end / "raw"
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        nombre_salida = os.path.join(script_end_interim, "zenodo.csv")
+        
+        
+        nombre_salida = os.path.join(script_end_raw, "zenodo.csv")
+        
+        # metadata = MetadataEX(
+        #     csv_path=nombre_salida,
+        #     dataset_name="zenodo",
+        #     folder=script_end_raw
+        # )
+        # metadata.generate_metadata_audio()
+        nombre_salida = os.path.join(script_end_raw, "UrbanSound8k.csv")
         
         metadata = MetadataEX(
             csv_path=nombre_salida,
-            dataset_name="zenodo",
+            dataset_name="UrbanSound8k",
             folder=script_end_raw
         )
-
         metadata.generate_metadata_audio()
-        # generate_filter_audio(
-        #     csv_path=nombre_salida,
-        #     ruta_origen=script_end_data, 
-        #     ruta_destino=script_end_interim
-        # )
-    
-        # generate_metadata_audio(
-        #     csv_path=nombre_salida,
-        #     dataset_name="zenodo"
-        # )
+
+       

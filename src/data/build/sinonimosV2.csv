@@ -36,6 +36,7 @@ animal,Livestock_and_farm_animals_and_working_animals,False,exterior
 animal,Wild_animals,False,exterior
 dog,Dog,False,indefinida
 dog,Bark,False,indefinida
+dog,dog_bark,False,indefinida
 dog,Growling,False,indefinida
 cat,Cat,False,indefinida
 cat,Meow,False,indefinida
@@ -72,6 +73,7 @@ laughter,Laughter,False,indefinida
 yell,Yell,False,indefinida
 yell,Shout,False,indefinida
 yell,Screaming,False,indefinida
+yell,scream,False,indefinida
 yell,RAVDESS_angry,True,interior
 yell,Angry_speech,True,interior
 yell,RAVDESS_fearful,True,interior
@@ -88,6 +90,8 @@ crying,RAVDESS_disgust,True,interior
 crying,Disgust_speech,True,interior
 alert_higth,Alarm,True,indefinida
 alert_higth,Siren,True,indefinida
+alert_higth,siren,True,indefinida
+fight,fight,True,indefinida
 alert_low,Ringtone,False,indefinida
 alert_low,Bell,False,indefinida
 alert_low,Bicycle_bell,False,indefinida
@@ -98,7 +102,9 @@ alert_low,Clock,False,indefinida
 alert_low,Tick,False,indefinida
 alert_low,Tick-tock,False,indefinida
 car_horn,Vehicle_horn_and_car_horn_and_honking,False,indefinida
+car_horn,car_horn,False,indefinida
 engine,Engine,False,indefinida
+engine,engine,False,indefinida
 engine,Idling,False,indefinida
 engine,Engine_starting,False,indefinida
 engine,Accelerating_and_revving_and_vroom,False,indefinida
@@ -144,6 +150,7 @@ glass_metal,Crushing,False,interior
 glass_metal,Slam,False,interior
 glass_metal,Thump_and_thud,False,interior
 glass_metal,Tap,False,interior
+glass_metal,glass_breaking,False,interior
 water,Water,False,interior
 water,Liquid,False,interior
 water,Pour,False,interior
@@ -162,12 +169,14 @@ weather,Raindrop,False,exterior
 weather,Thunder,False,exterior
 weather,Thunderstorm,False,exterior
 weather,Wind,False,exterior
+weather,wind,False,exterior
 weather,Waves_and_surf,False,exterior
 weather,Ocean,False,exterior
 weather,Whoosh_and_swoosh_and_swish,False,exterior
 fire,Fire,True,indefinida
-fire,Fireworks,True,indefinida
-fire,Explosion,True,indefinida
+fire,Fireworks,False,exterior
+fire,fireworks,False,exterior
+explosion,Explosion,True,indefinida
 food,Chewing_and_mastication,False,interior
 food,Frying_(food),False,interior
 food,Microwave_oven,False,interior
@@ -189,10 +198,12 @@ machine,Zipper_(clothing),False,interior
 movement,Run,False,indefinida
 movement,Walk_and_footsteps,False,indefinida
 movement,Sliding_door,False,indefinida
+ambient_noise,ambient_noise,False,indefinida
 ambient_noise,Air_conditioner,False,indefinida
 ambient_noise,AC,False,indefinida
 ambient_noise,Aircon,False,indefinida
 ambient_noise,Air_conditioning,False,indefinida
+human_activity,human_activity,False,indefinida
 human_activity,Children_playing,False,indefinida
 human_activity,Kids_playing,False,indefinida
 human_activity,Playground_activity,False,indefinida
@@ -200,10 +211,12 @@ construction_noise,Jackhammer,False,indefinida
 construction_noise,Pneumatic_jackhammer,False,indefinida
 construction_noise,Pneumatic_drill,False,indefinida
 music,Street_music,False,indefinida
+music,music,False,indefinida
 music,Busking,False,indefinida
 music,Live_music,False,indefinida
 music,Street_performance,False,indefinida
 gun_shot,Gun_shot,True,indefinida
 gun_shot,Gunshot,True,indefinida
+gun_shot,gunshot,True,indefinida
 gun_shot,Firearm_discharge,True,indefinida
 water,Toilet_flush,False,interior
