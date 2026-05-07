@@ -58,3 +58,5 @@ config.local.json
 secrets.json
 settings.local.py
 **/sonidos/
+notebooks/02_preprocessing.ipynb
+pyproject.toml
