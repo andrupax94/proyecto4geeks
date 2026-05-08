@@ -1,6 +1,6 @@
 # 🛰️ Architecture — Deforestation Detection System
 
-## 1. Overview
+## 1. Overvieww
 
 This project detects deforestation by comparing satellite imagery across time and identifying changes in vegetation.
 
