@@ -43,9 +43,14 @@ model-*.bin
 .idea/
 *.swp
 src/data/build/ESC50/ESC-50
-data/raw/*.wav
-data/raw/*/*.wav
-data/raw/*/*/*.wav
+data/*/*.wav
+data/*/*/*.wav
+data/*/*/*/*.wav
+
+data/*/*.npy
+data/*/*/*.npy
+data/*/*/*/*.npy
+
 proyecto4geeks.egg-info/
 # ===== Cache =====
 .git/

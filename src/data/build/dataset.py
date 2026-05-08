@@ -168,16 +168,15 @@ class Dataset:
             raise ValueError(f"Formato no soportado: {type(dato)}. Debe ser una ruta (str) o un DataFrame.")
 
 
-    def concatenar_y_ordenar_csvs(archivo1, archivo2, columna_orden, archivo_salida):
+    def concatenar_y_ordenar_csvs(archivos, columna_orden, archivo_salida):
         """
-        Concatena dos archivos CSV con las mismas columnas, los ordena,
+        Concatena varios archivos CSV con las mismas columnas, los ordena,
         guarda el resultado y elimina los archivos de entrada.
         """
         try:
-            df1 = Dataset.preparar_dataframe(archivo1)
-            df2 = Dataset.preparar_dataframe(archivo2)
+            dataframes = [Dataset.preparar_dataframe(archivo) for archivo in archivos]
 
-            df_resultado = pd.concat([df1, df2], ignore_index=True)
+            df_resultado = pd.concat(dataframes, ignore_index=True)
 
             if columna_orden in df_resultado.columns:
                 df_resultado = df_resultado.sort_values(by=columna_orden)
@@ -189,7 +188,7 @@ class Dataset:
             print(f"Éxito: Archivo guardado como '{archivo_salida}'")
 
             # Eliminar archivos originales solo después de guardar correctamente
-            for archivo in (archivo1, archivo2):
+            for archivo in archivos:
                 if os.path.exists(archivo):
                     os.remove(archivo)
                     print(f"Eliminado: '{archivo}'")

@@ -1,14 +1,27 @@
-┣ 📂.venv
 ┣ 📂.vscode
 ┣ 📂data
 ┃ ┣ 📂external
 ┃ ┣ 📂interim
-┃ ┃ ┣ 📂UrbanSound8k
-┃ ┃ ┣ 📂zenodo
-┃ ┃ ┣ 📜8k.csv
-┃ ┃ ┗ 📜zenodo.csv
 ┃ ┣ 📂processed
+┃ ┃ ┣ 📂audios_normalized
+┃ ┃ ┣ 📂mel_spectrograms
+┃ ┃ ┣ 📂spectrograms
+┃ ┃ ┣ 📜features.csv
+┃ ┃ ┣ 📜metadata_procesado.csv
+┃ ┃ ┗ 📜README.md
 ┃ ┗ 📂raw
+┃   ┣ 📂audioset
+┃   ┃ ┣ 📂car_horn
+┃   ┃ ┣ 📂engine
+┃   ┃ ┣ 📂fight
+┃   ┃ ┣ 📂fireworks
+┃   ┃ ┣ 📂glass_breaking
+┃   ┃ ┣ 📂gunshot
+┃   ┃ ┣ 📂music
+┃   ┃ ┣ 📂scream
+┃   ┃ ┣ 📂siren
+┃   ┃ ┗ 📂wind
+┃   ┣ 📂ESC50
 ┃   ┣ 📂UrbanSound8k
 ┃   ┃ ┣ 📂fold1
 ┃   ┃ ┣ 📂fold10
@@ -21,7 +34,12 @@
 ┃   ┃ ┣ 📂fold7
 ┃   ┃ ┣ 📂fold8
 ┃   ┃ ┗ 📂fold9
-┃   ┗ 📂zenodo
+┃   ┣ 📂zenodo
+┃   ┣ 📜dataset_final.csv
+┃   ┣ 📜ESC50.csv
+┃   ┣ 📜ravdess_dataset.csv
+┃   ┣ 📜UrbanSound8k.csv
+┃   ┗ 📜zenodo.csv
 ┣ 📂deployment
 ┃ ┣ 📂webapp
 ┃ ┃ ┣ 📂backend
@@ -48,11 +66,12 @@
 ┃ ┣ 📂jupiter_references_bibliograficas
 ┃ ┃ ┗ 📜UrbanSound8k_data_exploration.ipynb
 ┃ ┣ 📜clases.xlsx
-┃ ┣ 📜dataframe_estructure.txt
+┃ ┣ 📜dataframe_estructure.csv
 ┃ ┣ 📜dataset_resources_link.csv
 ┃ ┣ 📜ideas.csv
 ┃ ┣ 📜intrucciones de carpetas.txt
-┃ ┗ 📜Planteamiento del problema.docx
+┃ ┣ 📜Planteamiento del problema.docx
+┃ ┗ 📜Proyecto_Sistema_Alerta.docx
 ┣ 📂experiments
 ┃ ┣ 📂exp_001_baseline
 ┃ ┣ 📂exp_002_unet
@@ -61,10 +80,9 @@
 ┣ 📂notebooks
 ┃ ┣ 📜00_building_ds.ipynb
 ┃ ┣ 📜01_eda.ipynb
-┃ ┣ 📜02_preprocessing.ipynb
 ┃ ┣ 📜03_modeling.ipynb
 ┃ ┣ 📜04_evaluation.ipynb
-┃ ┗ 📜test.ipynb
+┃ ┗ 📜dev_tests.ipynb
 ┣ 📂proyecto4geeks.egg-info
 ┣ 📂reports
 ┃ ┣ 📂figures
@@ -76,6 +94,17 @@
 ┃ ┃ ┣ 📂build
 ┃ ┃ ┃ ┣ 📂__pycache__
 ┃ ┃ ┃ ┣ 📂audioset
+┃ ┃ ┃ ┃ ┣ 📜audioset.py
+┃ ┃ ┃ ┃ ┣ 📜balanced_train_segments.csv
+┃ ┃ ┃ ┃ ┗ 📜download_audioset_organizado.py
+┃ ┃ ┃ ┣ 📂ESC50
+┃ ┃ ┃ ┃ ┣ 📜download_esc50.py
+┃ ┃ ┃ ┃ ┣ 📜esc50.csv
+┃ ┃ ┃ ┃ ┗ 📜esc50.py
+┃ ┃ ┃ ┣ 📂ravdess
+┃ ┃ ┃ ┃ ┣ 📂sonidos
+┃ ┃ ┃ ┃ ┣ 📜build_ravdess_csv.py
+┃ ┃ ┃ ┃ ┗ 📜download_ravdess.py
 ┃ ┃ ┃ ┣ 📂UrbanSound8k
 ┃ ┃ ┃ ┃ ┣ 📜UrbanSound8K.csv
 ┃ ┃ ┃ ┃ ┗ 📜UrbanSound8k.py
@@ -89,11 +118,11 @@
 ┃ ┃ ┃ ┣ 📜__init__.py
 ┃ ┃ ┃ ┣ 📜dataset.py
 ┃ ┃ ┃ ┣ 📜metadata.py
-┃ ┃ ┃ ┣ 📜sinonimos.csv
 ┃ ┃ ┃ ┗ 📜sinonimosV2.csv
 ┃ ┃ ┣ 📜__init__.py
 ┃ ┃ ┣ 📜download.py
-┃ ┃ ┗ 📜preprocess.py
+┃ ┃ ┣ 📜preprocess.py
+┃ ┃ ┗ 📜preprocess2.py
 ┃ ┣ 📂features
 ┃ ┃ ┣ 📜__init__.py
 ┃ ┃ ┗ 📜build_features.py
@@ -113,7 +142,7 @@
 ┣ 📜.gitignore
 ┣ 📜┣ 📂.vscode
 ┣ 📜ARQUITECTURE.md
-┣ 📜pyproject.toml
 ┣ 📜README.md
+┣ 📜requirements_global.txt
 ┣ 📜requirements.txt
 ┗ 📜venv_instructions.txt

@@ -312,6 +312,7 @@ if __name__ == "__main__":
             split=val[1]
         )
         print(df_res[key].head())
-    Dataset.concatenar_y_ordenar_csvs(script_end_raw / "zenodo_train.csv",script_end_raw / "zenodo_test.csv","audio",script_end_raw / "zenodo.csv")
+    archivos=[script_end_raw / "zenodo_train.csv", script_end_raw / "zenodo_test.csv"]
+    Dataset.concatenar_y_ordenar_csvs(archivos ,"audio" , script_end_raw / "zenodo.csv")
    
   
