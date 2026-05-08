@@ -1,7 +1,71 @@
-pandas>=1.5
-numpy>=1.25
-soundfile>=0.12
-tinytag>=1.2
-tqdm>=4.65
-datasets>=2.0
-openpyxl
+# ===============================
+# BASE DATA SCIENCE
+# ===============================
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.1
+matplotlib==3.9.0
+seaborn==0.13.2
+tqdm==4.66.4
+
+# ===============================
+# AUDIO PROCESSING
+# ===============================
+librosa==0.10.2.post1
+soundfile==0.12.1
+pydub==0.25.1
+audioread==3.0.1
+
+# ===============================
+# MACHINE LEARNING
+# ===============================
+scikit-learn==1.5.0
+joblib==1.4.2
+
+# ===============================
+# DEEP LEARNING
+# (compatible Python 3.12)
+# ===============================
+torch==2.3.1
+torchaudio==2.3.1
+torchvision==0.18.1
+
+# ===============================
+# VISUALIZATION
+# ===============================
+plotly==5.22.0
+
+# ===============================
+# NLP
+# ===============================
+spacy==3.8.0
+es_core_news_md @ https://github.com/explosion/spacy-models/releases/download/es_core_news_md-3.8.0/es_core_news_md-3.8.0-py3-none-any.whl
+
+# ===============================
+# NOTEBOOK / EDA
+# ===============================
+notebook==7.2.0
+ipykernel==6.29.4
+
+# ===============================
+# CONFIG
+# ===============================
+python-dotenv==1.0.1
+pyyaml==6.0.1
+
+# ===============================
+# UTILITIES
+# ===============================
+requests==2.32.3
+rich==13.7.1
+click==8.1.7
+
+# ===============================
+# TESTING
+# ===============================
+pytest==8.2.2
+
+# ===============================
+# REALTIME AUDIO (alert system)
+# ===============================
+sounddevice==0.4.7
