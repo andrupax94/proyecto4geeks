@@ -34,11 +34,11 @@ Thumbs.db
 # ===== Modelos LLM (NO subir a Git) =====
 
 *.gguf
-models/
+
 model-*.bin
 
 # ===== IDE =====
-
+.vscode/*
 .vscode/
 .idea/
 *.swp
