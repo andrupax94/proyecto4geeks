@@ -18,5 +18,7 @@ siz,tamañokbites
 date_modification, fecha de modificacion
 environment, categoria de entorno del sonido bocina de auto: = "calle" "aire acondicionado"= "interior"
 emergency, true o false
+alertable, true o false
 
 
+audio,label,labels,human_label,human_labels,path,dataset_source,split,env,emergency,file_exists,audio_format,duration,sample_rate,channels,bit_depth,bit_velocity,size,date_modification,alertable
