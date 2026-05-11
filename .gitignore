@@ -66,3 +66,4 @@ secrets.json
 settings.local.py
 **/sonidos/
 pyproject.toml
+settings.json
