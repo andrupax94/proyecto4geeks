@@ -31,6 +31,6 @@ if __name__ == "__main__":
     metadata = MetadataEX(
         csv_path=nombre_salida,
         dataset_name="audioset",
-        folder=RAW_DIR / "audioset"
+        folder=RAW_DIR
     )
     metadata.generate_metadata_audio()
