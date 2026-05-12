@@ -14,6 +14,5 @@ CHECKPOINT_MODEL= ROOT_DIR / "models" / "final"
 
 
 DATASET_FINAL = RAW_DIR / "dataset_final.csv"
-DATASET_FINAL_FINAL = RAW_DIR / "dataset_updated.csv"
 LABEL_MAPPING = ESPECTOGRAMS_DIR / "label_mapping.pkl"
 PROCESSED_METADATA = ESPECTOGRAMS_DIR / "processed_metadata.csv"

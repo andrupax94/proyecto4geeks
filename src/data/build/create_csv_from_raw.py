@@ -3,8 +3,25 @@ import csv
 import json
 from pathlib import Path
 import pandas as pd
+import re
+import hashlib
+from src.utils.config import BUILD_DIR
 class Create_csv_from_raw:
-    
+    def clave_norm(texto):
+        """
+        Normaliza texto para comparaciones robustas:
+        - lower
+        - espacios -> _
+        - trim
+        """
+        texto = str(texto).strip().lower()
+        texto = re.sub(r"\s+", "_", texto)
+        return texto
+
+    def generar_mid_custom(canonical: str, prefijo="/C/") -> str:
+        base = Create_csv_from_raw.clave_norm(canonical)
+        digest = hashlib.md5(base.encode("utf-8")).hexdigest()[:8]
+        return f"{prefijo}{base}_{digest}"
     def generar_csv_audio(
         df=None,
         col_labels=None,
@@ -16,8 +33,8 @@ class Create_csv_from_raw:
         dataset_name="zenodo",
         split="train",
         nocsv=False,
-        ruta_csv_sinonimos="canonical_synonym.csv",
-        ruta_csv_alert_env="canonical_alertable_environment.csv",
+        ruta_csv_sinonimos=BUILD_DIR / "sinonimosV2.csv",
+        ruta_csv_alert_env=BUILD_DIR / "canonical_clases.csv",
     ):
         """
         Genera un CSV de audio en dos modos:
@@ -38,12 +55,7 @@ class Create_csv_from_raw:
         - `alertable`, `emergency` y `env` se cargan desde `canonical_alertable_environment.csv`.
         """
 
-        if ruta_carpeta is None:
-            raise ValueError("`ruta_carpeta` es obligatorio.")
-
-        ruta_carpeta = Path(ruta_carpeta)
-        if not ruta_carpeta.exists():
-            raise ValueError(f"`ruta_carpeta` no existe: {ruta_carpeta}")
+ 
 
         # ------------------------------------------------------------
         # Helpers
@@ -81,7 +93,7 @@ class Create_csv_from_raw:
             return [s]
 
         def norm(x):
-            return Dataset.clave_norm(str(x).strip())
+            return Create_csv_from_raw.clave_norm(str(x).strip())
 
         def cargar_sinonimos_desde_csv(path_csv):
             """
@@ -242,6 +254,12 @@ class Create_csv_from_raw:
         # Modo nocsv=True -> construir desde estructura de carpetas
         # ------------------------------------------------------------
         if nocsv:
+            if ruta_carpeta is None:
+                raise ValueError("`ruta_carpeta` es obligatorio.")
+
+            ruta_carpeta = Path(ruta_carpeta)
+            if not ruta_carpeta.exists():
+                raise ValueError(f"`ruta_carpeta` no existe: {ruta_carpeta}")
             filas = []
 
             extensiones_validas = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac"}
@@ -263,7 +281,7 @@ class Create_csv_from_raw:
                 # label/MID: primero intenta por canonical, luego genera uno estable
                 mid = mapa_canonico_mid.get(norm(canonical), "")
                 if not mid:
-                    mid = Dataset.generar_mid_custom(canonical)
+                    mid = Create_csv_from_raw.generar_mid_custom(canonical)
 
                 info = mapa_alertas.get(norm(canonical), {})
                 alertable = info.get("alertable", False)
@@ -401,7 +419,7 @@ class Create_csv_from_raw:
                 clave = norm(normalizar_etiqueta(canon))
                 mid = lookup_label_mid.get(clave, "")
                 if not mid:
-                    mid = Dataset.generar_mid_custom(canon)
+                    mid = Create_csv_from_raw.generar_mid_custom(canon)
                 return mid
 
             mids_lista = [m.strip() for m in str(row[col_mids]).split(",") if m.strip()]

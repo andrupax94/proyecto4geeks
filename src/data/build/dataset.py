@@ -3,30 +3,11 @@ import os
 from pathlib import Path
 import shutil
 from tqdm import tqdm 
-from src.data.build.metadata import MetadataEX
-import json
-import csv
-from src.data.build.dataset import Dataset
-import re
-import hashlib
+
+from src.data.build.create_csv_from_raw import Create_csv_from_raw
+
 class Dataset:
-    
-    def clave_norm(texto):
-        """
-        Normaliza texto para comparaciones robustas:
-        - lower
-        - espacios -> _
-        - trim
-        """
-        texto = str(texto).strip().lower()
-        texto = re.sub(r"\s+", "_", texto)
-        return texto
-
-    def generar_mid_custom(canonical: str, prefijo="/C/") -> str:
-        base = Dataset.clave_norm(canonical)
-        digest = hashlib.md5(base.encode("utf-8")).hexdigest()[:8]
-        return f"{prefijo}{base}_{digest}"
-
+    generar_csv_audio = Create_csv_from_raw.generar_csv_audio
     def generate_filter_audio(csv_path, ruta_origen, ruta_destino):
         """
         Copia archivos de audio filtrados en el CSV desde una ruta de origen a una de destino,
@@ -82,9 +63,6 @@ class Dataset:
         print(f"No encontrados en origen: {archivos_no_encontrados}")
         print(f"Ubicación destino: {os.path.abspath(ruta_destino)}")
 
-
-    def generate_enviroment_columns():
-        pass
 
     def cargar_sinonimos_csv(
         path_csv,
@@ -189,15 +167,28 @@ class Dataset:
         else:
             raise ValueError(f"Formato no soportado: {type(dato)}. Debe ser una ruta (str) o un DataFrame.")
         
-    def concatenar_y_ordenar_csvs(archivos, columna_orden, archivo_salida):
+    def concatenar_y_ordenar_csvs(archivos, columna_orden, archivo_salida, delete_old=False, sum_data=False):
         """
         Concatena varios archivos CSV con las mismas columnas, los ordena,
         guarda el resultado y elimina los archivos de entrada.
+
+        Parámetros:
+            archivos: lista de rutas CSV de entrada
+            columna_orden: columna por la que ordenar
+            archivo_salida: ruta del CSV final
+            delete_old: si True, elimina los CSV originales tras guardar
+            sum_data: si True, agrega los datos al archivo_salida existente
         """
         try:
             dataframes = [Dataset.preparar_dataframe(archivo) for archivo in archivos]
 
             df_resultado = pd.concat(dataframes, ignore_index=True)
+
+            # Si sum_data=True y ya existe el archivo final, se agrega su contenido
+            if sum_data and os.path.exists(archivo_salida):
+                df_existente = Dataset.preparar_dataframe(archivo_salida)
+                df_resultado = pd.concat([df_existente, df_resultado], ignore_index=True)
+                print(f"Datos previos cargados desde '{archivo_salida}' y añadidos al resultado.")
 
             if columna_orden in df_resultado.columns:
                 df_resultado = df_resultado.sort_values(by=columna_orden)
@@ -209,12 +200,13 @@ class Dataset:
             print(f"Éxito: Archivo guardado como '{archivo_salida}'")
 
             # Eliminar archivos originales solo después de guardar correctamente
-            for archivo in archivos:
-                if os.path.exists(archivo):
-                    os.remove(archivo)
-                    print(f"Eliminado: '{archivo}'")
-                else:
-                    print(f"No existe para eliminar: '{archivo}'")
+            if delete_old:
+                for archivo in archivos:
+                    if os.path.exists(archivo):
+                        os.remove(archivo)
+                        print(f"Eliminado: '{archivo}'")
+                    else:
+                        print(f"No existe para eliminar: '{archivo}'")
 
         except FileNotFoundError:
             print("Error: Uno de los archivos no fue encontrado.")
@@ -231,13 +223,7 @@ class Dataset:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         
         
-        # nombre_salida = os.path.join(script_end_raw, "zenodo.csv")
-        
-        # metadata = MetadataEX(
-        #     csv_path=nombre_salida,
-        #     dataset_name="zenodo",
-        #     folder=script_end_raw
-        # )
+       
     
         # nombre_salida = os.path.join(script_end_raw, "UrbanSound8k.csv")
         
