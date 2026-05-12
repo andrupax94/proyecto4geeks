@@ -30,7 +30,7 @@ def obtener_human_labels_env_vacio(ruta_csv, n_muestra=20):
 
 # Ejemplo de uso:
 if __name__ == "__main__":
-    ruta = RAW_DIR / "UrbanSound8k.csv" 
+    ruta = RAW_DIR / "ESC50.csv" 
     muestra = obtener_human_labels_env_vacio(ruta)
     print("Muestra de human_label con env vacío o indefinido:")
     print(muestra)

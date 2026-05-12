@@ -16,6 +16,7 @@ instrument,Piano
 instrument,Organ
 instrument,Brass_instrument
 instrument,Trumpet
+instrument,Gong
 instrument,Harmonica
 instrument,Percussion
 instrument,Drum
@@ -73,6 +74,7 @@ voice,Clapping
 voice,Chuckle_and_chortle
 voice,Giggle
 voice,Laughter
+voice,laughing
 fight,Screech
 fight,Yell
 fight,Shout
@@ -235,6 +237,7 @@ ambient_noise,Street_music
 ambient_noise,music
 ambient_noise,Busking
 ambient_noise,Live_music
+ambient_noise,footsteps
 ambient_noise,Street_performance
 gun_shot,Gun_shot
 gun_shot,Gunshot

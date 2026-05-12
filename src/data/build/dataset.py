@@ -217,10 +217,11 @@ class Dataset:
     # concatenar_y_ordenar_csvs('datos_enero.csv', 'datos_febrero.csv', 'fecha', 'reporte_final.csv')
     # --- EJEMPLO DE CONFIGURACIÓN ---
 if __name__ == "__main__":
-    archivos=[RAW_DIR / "zenodo.csv", 
-              RAW_DIR / "ESC50.csv",
-              RAW_DIR / "UrbanSound8k.csv",
-              ]
+    archivos=[
+            RAW_DIR / "zenodo.csv", 
+            RAW_DIR / "ESC50.csv",
+            RAW_DIR / "UrbanSound8k.csv",
+            ]
     Dataset.concatenar_y_ordenar_csvs(archivos ,"audio" , RAW_DIR / "dataset_final.csv")
         
     
