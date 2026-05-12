@@ -85,7 +85,7 @@ def obtener_clase(folder):
 
     canonical = synonym_to_canonical.get(folder, folder)
 
-    human_label = canonical.replace("_", " ")
+    human_label = canonical
 
     info = canonical_info.get(canonical, {})
 
