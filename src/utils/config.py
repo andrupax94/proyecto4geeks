@@ -1,18 +1,57 @@
 from pathlib import Path
 
+# ===============================
+# ROOT
+# ===============================
+
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
-BUILD_DIR = ROOT_DIR / "src" /"data"/ "build"
+# ===============================
+# DATA GENERAL
+# ===============================
+
 DATA_DIR = ROOT_DIR / "data"
+
 RAW_DIR = DATA_DIR / "raw"
 INTERIM_DIR = DATA_DIR / "interim"
-ESPECTOGRAMS_DIR = INTERIM_DIR / "processed_dataset"
 PROCESSED_DIR = DATA_DIR / "processed"
 
-CHECKPOINT_MODEL= ROOT_DIR / "models" / "checkpoints"
-CHECKPOINT_MODEL= ROOT_DIR / "models" / "final"
+# ===============================
+# BUILD DATA
+# ===============================
 
+BUILD_DIR = ROOT_DIR / "src" / "data" / "build"
 
-DATASET_FINAL = RAW_DIR / "dataset_final.csv"
+# ===============================
+# AUDIOSET
+# ===============================
+
+AUDIOSET_BUILD_DIR = BUILD_DIR / "AudioSet"
+AUDIOSET_SONIDOS_DIR = AUDIOSET_BUILD_DIR / "sonidos"
+
+SINONIMOS_V3_PATH = BUILD_DIR / "sinonimosV3.csv"
+CANONICAL_CLASSES_PATH = BUILD_DIR / "canonical_clases.csv"
+
+AUDIOSET_DATASET_PATH = RAW_DIR / "audioset.csv"
+
+# ===============================
+# FEATURES / ESPECTOGRAMAS
+# ===============================
+
+ESPECTOGRAMS_DIR = INTERIM_DIR / "processed_dataset"
+
 LABEL_MAPPING = ESPECTOGRAMS_DIR / "label_mapping.pkl"
 PROCESSED_METADATA = ESPECTOGRAMS_DIR / "processed_metadata.csv"
+
+# ===============================
+# DATASETS FINALES
+# ===============================
+
+DATASET_FINAL = RAW_DIR / "dataset_final.csv"
+
+# ===============================
+# MODELOS
+# ===============================
+
+CHECKPOINT_DIR = ROOT_DIR / "models" / "checkpoints"
+FINAL_MODEL_DIR = ROOT_DIR / "models" / "final"
