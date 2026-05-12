@@ -3,24 +3,24 @@ import pandas as pd
 import subprocess
 import sys
 
-# ==========================
-# CONFIG RUTAS
-# ==========================
+print("Cargando AudioSet...")
+
+# ========================
+# RUTAS
+# ========================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-CSV_FILE = os.path.join(BASE_DIR, "balanced_train_segments.csv")
+CSV_AUDIOSET = os.path.join(
+    BASE_DIR,
+    "balanced_train_segments.csv"
+)
 
 OUTPUT_DIR = os.path.join(BASE_DIR, "sonidos")
 
-MAX_DOWNLOADS = 40
-
-print("CSV:", CSV_FILE)
-print("OUTPUT:", OUTPUT_DIR)
-
-# ==========================
-# CLASES AUDIOSET
-# ==========================
+# ========================
+# CLASES
+# ========================
 
 CLASSES = {
 
@@ -39,121 +39,122 @@ CLASSES = {
     "music": "/m/04rlf",
 }
 
-# ==========================
+TARGET_PER_CLASS = 80
+
+# ========================
 # CREAR CARPETAS
-# ==========================
+# ========================
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-for categoria in CLASSES:
-    os.makedirs(
-        os.path.join(OUTPUT_DIR, categoria),
-        exist_ok=True
-    )
+for c in CLASSES:
+    os.makedirs(os.path.join(OUTPUT_DIR, c), exist_ok=True)
 
-# ==========================
-# LEER CSV CORRECTAMENTE
-# ==========================
-
-print("\nLeyendo CSV AudioSet...")
-
-print("\nLeyendo CSV AudioSet (modo robusto)...")
+# ========================
+# LEER AUDIOSET
+# ========================
 
 rows = []
 
-with open(CSV_FILE, "r", encoding="utf-8") as f:
-
+with open(CSV_AUDIOSET, "r", encoding="utf-8") as f:
     for line in f:
 
-        # ignorar comentarios
         if line.startswith("#"):
             continue
 
-        # eliminar comillas
-        line = line.replace('"', '')
-
         parts = line.strip().split(",")
 
-        # proteger líneas corruptas
         if len(parts) < 4:
             continue
 
-        ytid = parts[0]
-        start = parts[1]
-        end = parts[2]
-
-        # labels pueden tener MUCHAS comas
-        labels = ",".join(parts[3:])
-
-        rows.append([ytid, start, end, labels])
+        rows.append([
+            parts[0],
+            parts[1],
+            parts[2],
+            ",".join(parts[3:])
+        ])
 
 df = pd.DataFrame(
     rows,
     columns=["YTID", "start", "end", "labels"]
 )
 
-print("Filas cargadas:", len(df))
-print(df.head())
+print("Total filas:", len(df))
 
+# ========================
+# CONTADORES
+# ========================
 
-# ==========================
-# DESCARGA
-# ==========================
+downloaded = {c: 0 for c in CLASSES}
 
-contador = 0
+# ========================
+# DESCARGA MASIVA INTELIGENTE
+# ========================
 
 for _, row in df.iterrows():
 
-    if contador >= MAX_DOWNLOADS:
+    # detener cuando TODAS estén completas
+    if all(v >= TARGET_PER_CLASS for v in downloaded.values()):
         break
 
-    labels = str(row["labels"]).split(",")
+    labels = row["labels"]
 
     for class_name, label_code in CLASSES.items():
 
-        if label_code in labels:
+        if downloaded[class_name] >= TARGET_PER_CLASS:
+            continue
 
-            ytid = row["YTID"]
+        if label_code not in labels:
+            continue
 
-            try:
-                start = float(row["start"])
-                end = float(row["end"])
-            except:
-                continue
+        ytid = row["YTID"]
 
-            url = f"https://youtube.com/watch?v={ytid}"
+        try:
+            start = float(row["start"])
+            end = float(row["end"])
+        except:
+            continue
 
-            output_file = os.path.join(
-                OUTPUT_DIR,
-                class_name,
-                f"{ytid}.%(ext)s"
+        url = f"https://youtube.com/watch?v={ytid}"
+
+        output_file = os.path.join(
+            OUTPUT_DIR,
+            class_name,
+            f"{ytid}.wav"
+        )
+
+        if os.path.exists(output_file):
+            downloaded[class_name] += 1
+            continue
+
+        print(f"⬇ {class_name} -> {ytid}")
+
+        cmd = [
+            sys.executable,
+            "-m",
+            "yt_dlp",
+            "-x",
+            "--audio-format", "wav",
+            "--download-sections",
+            f"*{start}-{end}",
+            "-o", output_file,
+            url,
+        ]
+
+        try:
+            subprocess.run(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=True
             )
 
-            print(f"\nDescargando {class_name} -> {url}")
+            downloaded[class_name] += 1
 
-            cmd = [
-                sys.executable,
-                "-m",
-                "yt_dlp",
-                "-x",
-                "--audio-format", "wav",
-                "--download-sections",
-                f"*{start}-{end}",
-                "-o",
-                output_file,
-                url,
-                "--quiet",
-                "--no-warnings"
-            ]
+            print("✅", downloaded)
 
-            try:
-                subprocess.run(cmd, check=True)
-                contador += 1
-                print("✅ OK:", contador)
+        except:
+            pass
 
-            except Exception as e:
-                print("❌ Error:", e)
-
-            break
-
-print("\n🎯 DESCARGA FINALIZADA")
+print("\nDESCARGA TERMINADA")
+print(downloaded)
