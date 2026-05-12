@@ -28,7 +28,7 @@ venv/
 Thumbs.db
 
 # ===== Logs =====
-
+*.zip
 *.log
 
 # ===== Modelos LLM (NO subir a Git) =====

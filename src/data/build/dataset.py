@@ -4,7 +4,29 @@ from pathlib import Path
 import shutil
 from tqdm import tqdm 
 from src.data.build.metadata import MetadataEX
+import json
+import csv
+from src.data.build.dataset import Dataset
+import re
+import hashlib
 class Dataset:
+    
+    def clave_norm(texto):
+        """
+        Normaliza texto para comparaciones robustas:
+        - lower
+        - espacios -> _
+        - trim
+        """
+        texto = str(texto).strip().lower()
+        texto = re.sub(r"\s+", "_", texto)
+        return texto
+
+    def generar_mid_custom(canonical: str, prefijo="/C/") -> str:
+        base = Dataset.clave_norm(canonical)
+        digest = hashlib.md5(base.encode("utf-8")).hexdigest()[:8]
+        return f"{prefijo}{base}_{digest}"
+
     def generate_filter_audio(csv_path, ruta_origen, ruta_destino):
         """
         Copia archivos de audio filtrados en el CSV desde una ruta de origen a una de destino,
@@ -166,8 +188,7 @@ class Dataset:
             return pd.read_csv(str(dato))
         else:
             raise ValueError(f"Formato no soportado: {type(dato)}. Debe ser una ruta (str) o un DataFrame.")
-
-
+        
     def concatenar_y_ordenar_csvs(archivos, columna_orden, archivo_salida):
         """
         Concatena varios archivos CSV con las mismas columnas, los ordena,

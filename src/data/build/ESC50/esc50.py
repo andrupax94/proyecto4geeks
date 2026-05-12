@@ -1,4 +1,4 @@
-import src.data.build.zenodo_ds.zenodo_ds as zn
+
 import pandas as pd
 import os
 from pathlib import Path
@@ -18,7 +18,7 @@ if __name__ == "__main__":
         # Clases que quieres conservar (ahora puedes usar los nombres oficiales)
         
         nombre_salida = os.path.join(script_end_raw, key)
-        df_res[key] = zn.generar_csv_audio(
+        df_res[key] = Dataset.generar_csv_audio(
             df=df_original,
             col_labels='category',
             col_mids=script_end_raw / "zenodo.csv",
