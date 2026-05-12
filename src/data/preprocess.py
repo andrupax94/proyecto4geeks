@@ -12,7 +12,7 @@ Cambios respecto al script original:
 """
 
 from __future__ import annotations
-
+import soundfile as sf
 import re
 import warnings
 from dataclasses import dataclass
@@ -335,7 +335,16 @@ class Preprocess:
                 })
                 return result
 
-            waveform, sr = torchaudio.load(str(audio_path))
+         
+
+            audio_np, sr = sf.read(str(audio_path))
+
+            waveform = torch.tensor(audio_np, dtype=torch.float32)
+
+            if waveform.ndim == 1:
+                waveform = waveform.unsqueeze(0)
+            else:
+                waveform = waveform.transpose(0, 1)
             waveform = self._ensure_mono(waveform).to(self.device)
 
             if sr != self.config.sample_rate:
@@ -400,17 +409,36 @@ class Preprocess:
         df_new = pd.DataFrame(results)
 
         # Actualiza el CSV final sin perder el histórico de otros dataset_source.
-        if self.metadata_path.exists():
-            df_old = pd.read_csv(self.metadata_path)
-            if cols["dataset_source"] in df_old.columns and cols["dataset_source"] in df_new.columns and not df_new.empty:
-                dataset_sources = df_new[cols["dataset_source"]].dropna().astype(str).unique().tolist()
-                df_old = df_old[~df_old[cols["dataset_source"]].astype(str).isin(dataset_sources)]
-            df_final = pd.concat([df_old, df_new], ignore_index=True)
+        if self.metadata_path.exists() and self.metadata_path.stat().st_size > 0:
+            try:
+                df_old = pd.read_csv(self.metadata_path)
+
+                if (
+                    cols["dataset_source"] in df_old.columns
+                    and cols["dataset_source"] in df_new.columns
+                    and not df_new.empty
+                ):
+                    dataset_sources = (
+                        df_new[cols["dataset_source"]]
+                        .dropna()
+                        .astype(str)
+                        .unique()
+                        .tolist()
+                    )
+
+                    df_old = df_old[
+                        ~df_old[cols["dataset_source"]]
+                        .astype(str)
+                        .isin(dataset_sources)
+                    ]
+
+                df_final = pd.concat([df_old, df_new], ignore_index=True)
+
+            except pd.errors.EmptyDataError:
+                df_final = df_new
+
         else:
             df_final = df_new
-
-        df_final.to_csv(self.metadata_path, index=False)
-        print(f"✅ CSV final actualizado: {self.metadata_path}")
 
         return df_final
 
@@ -437,7 +465,8 @@ def main():
     
   
     # Definimos los nombres de los archivos
-    csv_filenames = ["ESC50.csv", "UrbanSound8k.csv", "zenodo.csv"]
+    # csv_filenames = ["ESC50.csv", "UrbanSound8k.csv", "zenodo.csv"]
+    csv_filenames = ["ESC50.csv"]
 
     # Mapeamos para agregar el raw_dir usando una list comprehension
     csv_paths = [RAW_DIR / f for f in csv_filenames]
