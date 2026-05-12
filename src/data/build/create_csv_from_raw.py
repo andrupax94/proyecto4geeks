@@ -33,7 +33,7 @@ class Create_csv_from_raw:
         dataset_name="zenodo",
         split="train",
         nocsv=False,
-        ruta_csv_sinonimos=BUILD_DIR / "sinonimosV2.csv",
+        ruta_csv_sinonimos=BUILD_DIR / "sinonimosV3.csv",
         ruta_csv_alert_env=BUILD_DIR / "canonical_clases.csv",
     ):
         """

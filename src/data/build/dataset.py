@@ -5,7 +5,7 @@ import shutil
 from tqdm import tqdm 
 
 from src.data.build.create_csv_from_raw import Create_csv_from_raw
-
+from src.utils.config import RAW_DIR
 class Dataset:
     generar_csv_audio = Create_csv_from_raw.generar_csv_audio
     def generate_filter_audio(csv_path, ruta_origen, ruta_destino):
@@ -216,29 +216,13 @@ class Dataset:
     # Ejemplo de uso:
     # concatenar_y_ordenar_csvs('datos_enero.csv', 'datos_febrero.csv', 'fecha', 'reporte_final.csv')
     # --- EJEMPLO DE CONFIGURACIÓN ---
-    if __name__ == "__main__":
-        script_end = Path(__file__).resolve().parents[3] / "data"
-        script_end_interim = script_end / "interim"
-        script_end_raw = script_end / "raw"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
+if __name__ == "__main__":
+    archivos=[RAW_DIR / "zenodo.csv", 
+              RAW_DIR / "ESC50.csv",
+              RAW_DIR / "UrbanSound8k.csv",
+              ]
+    Dataset.concatenar_y_ordenar_csvs(archivos ,"audio" , RAW_DIR / "dataset_final.csv")
         
-        
-       
     
-        # nombre_salida = os.path.join(script_end_raw, "UrbanSound8k.csv")
-        
-        # metadata = MetadataEX(
-        #     csv_path=nombre_salida,
-        #     dataset_name="UrbanSound8k",
-        #     folder=script_end_raw
-        # )
-        nombre_salida = os.path.join(script_end_raw, "ESC50.csv")
-        
-        metadata = MetadataEX(
-            csv_path=nombre_salida,
-            dataset_name="ESC50",
-            folder=script_end_raw
-        )
-        metadata.generate_metadata_audio()
 
        
