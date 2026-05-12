@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import subprocess
+import sys
 
 # ==========================
 # CONFIG RUTAS
@@ -8,26 +9,22 @@ import subprocess
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 📄 CSV (queda en AudioSet)
 CSV_FILE = os.path.join(BASE_DIR, "balanced_train_segments.csv")
 
-# 📁 Carpeta principal AudioSet
-AUDIOSET_DIR = BASE_DIR
+OUTPUT_DIR = os.path.join(BASE_DIR, "sonidos")
 
-# 📁 Carpeta final donde se organizarán sonidos
-OUTPUT_DIR = os.path.join(AUDIOSET_DIR, "sonidos")
+MAX_DOWNLOADS = 40
 
 print("CSV:", CSV_FILE)
 print("OUTPUT:", OUTPUT_DIR)
 
-MAX_DOWNLOADS = 40
-
 # ==========================
-# CLASES
+# CLASES AUDIOSET
 # ==========================
 
 CLASSES = {
-    # 🚨 Emergencia
+
+    # 🚨 EMERGENCIA
     "gunshot": "/m/09x0r",
     "scream": "/m/03qc9zr",
     "glass_breaking": "/m/07r04",
@@ -35,11 +32,11 @@ CLASSES = {
     "siren": "/m/012n7d",
     "fight": "/m/0jbk",
 
-    # 🌆 Normal
+    # 🌆 NORMAL
     "engine": "/m/02mfyn",
     "car_horn": "/m/0284vy3",
     "wind": "/m/03l2n",
-    "music": "/m/04rlf"
+    "music": "/m/04rlf",
 }
 
 # ==========================
@@ -55,32 +52,49 @@ for categoria in CLASSES:
     )
 
 # ==========================
-# LEER CSV (FORMA ROBUSTA)
+# LEER CSV CORRECTAMENTE
 # ==========================
 
-df_rows = []
+print("\nLeyendo CSV AudioSet...")
+
+print("\nLeyendo CSV AudioSet (modo robusto)...")
+
+rows = []
 
 with open(CSV_FILE, "r", encoding="utf-8") as f:
+
     for line in f:
 
+        # ignorar comentarios
         if line.startswith("#"):
             continue
 
+        # eliminar comillas
+        line = line.replace('"', '')
+
         parts = line.strip().split(",")
 
+        # proteger líneas corruptas
         if len(parts) < 4:
             continue
 
         ytid = parts[0]
         start = parts[1]
         end = parts[2]
-        labels = ",".join(parts[3:])  # evita errores por comas extra
 
-        df_rows.append([ytid, start, end, labels])
+        # labels pueden tener MUCHAS comas
+        labels = ",".join(parts[3:])
 
-df = pd.DataFrame(df_rows, columns=["YTID", "start", "end", "labels"])
+        rows.append([ytid, start, end, labels])
+
+df = pd.DataFrame(
+    rows,
+    columns=["YTID", "start", "end", "labels"]
+)
 
 print("Filas cargadas:", len(df))
+print(df.head())
+
 
 # ==========================
 # DESCARGA
@@ -93,7 +107,7 @@ for _, row in df.iterrows():
     if contador >= MAX_DOWNLOADS:
         break
 
-    labels = str(row["labels"])
+    labels = str(row["labels"]).split(",")
 
     for class_name, label_code in CLASSES.items():
 
@@ -112,29 +126,34 @@ for _, row in df.iterrows():
             output_file = os.path.join(
                 OUTPUT_DIR,
                 class_name,
-                f"{ytid}.wav"
+                f"{ytid}.%(ext)s"
             )
 
-            print("Descargando:", url, "->", class_name)
+            print(f"\nDescargando {class_name} -> {url}")
 
             cmd = [
-                "python",
+                sys.executable,
                 "-m",
                 "yt_dlp",
                 "-x",
                 "--audio-format", "wav",
                 "--download-sections",
                 f"*{start}-{end}",
-                "-o", output_file,
+                "-o",
+                output_file,
                 url,
+                "--quiet",
+                "--no-warnings"
             ]
 
             try:
                 subprocess.run(cmd, check=True)
                 contador += 1
+                print("✅ OK:", contador)
+
             except Exception as e:
-                print("Error con:", url, e)
+                print("❌ Error:", e)
 
             break
 
-print("DESCARGA FINALIZADA")
+print("\n🎯 DESCARGA FINALIZADA")
