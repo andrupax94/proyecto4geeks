@@ -23,182 +23,181 @@ from src.utils.config import (
 # =====================================
 # FUNCTIONS
 # =====================================
-class AudioSet:
-  
-    # =====================================
-    # LOAD AUX FILES
-    # =====================================
 
-    print("Cargando sinonimos...")
-    sinonimos = pd.read_csv(SINONIMOS_V3_PATH)
+# =====================================
+# LOAD AUX FILES
+# =====================================
 
-    print("Cargando canonical clases...")
-    canonical_df = pd.read_csv(CANONICAL_CLASSES_PATH)
+print("Cargando sinonimos...")
+sinonimos = pd.read_csv(SINONIMOS_V3_PATH)
 
-    sinonimos["canonical"] = sinonimos["canonical"].str.lower()
-    sinonimos["synonym"] = sinonimos["synonym"].str.lower()
-    canonical_df["canonical"] = canonical_df["canonical"].str.lower()
+print("Cargando canonical clases...")
+canonical_df = pd.read_csv(CANONICAL_CLASSES_PATH)
 
-    synonym_to_canonical = dict(
-        zip(sinonimos["synonym"], sinonimos["canonical"])
+sinonimos["canonical"] = sinonimos["canonical"].str.lower()
+sinonimos["synonym"] = sinonimos["synonym"].str.lower()
+canonical_df["canonical"] = canonical_df["canonical"].str.lower()
+
+synonym_to_canonical = dict(
+    zip(sinonimos["synonym"], sinonimos["canonical"])
+)
+
+canonical_info = canonical_df.set_index("canonical").to_dict("index")
+def obtener_metadata(audio_path):
+    try:
+        info = sf.info(audio_path)
+        duration = info.duration
+        sample_rate = info.samplerate
+        channels = "Mono" if info.channels == 1 else "Stereo"
+        bit_depth = info.subtype
+
+    except Exception:
+        y, sr = librosa.load(audio_path, sr=None)
+        duration = librosa.get_duration(y=y, sr=sr)
+        sample_rate = sr
+        channels = "Mono"
+        bit_depth = "Unknown"
+
+    size_kb = os.path.getsize(audio_path) / 1024
+
+    modification_date = datetime.fromtimestamp(
+        os.path.getmtime(audio_path)
     )
 
-    canonical_info = canonical_df.set_index("canonical").to_dict("index")
-    def obtener_metadata(audio_path):
-        try:
-            info = sf.info(audio_path)
-            duration = info.duration
-            sample_rate = info.samplerate
-            channels = "Mono" if info.channels == 1 else "Stereo"
-            bit_depth = info.subtype
+    audio_format = audio_path.suffix.replace(".", "").lower()
 
-        except Exception:
-            y, sr = librosa.load(audio_path, sr=None)
-            duration = librosa.get_duration(y=y, sr=sr)
-            sample_rate = sr
-            channels = "Mono"
-            bit_depth = "Unknown"
-
-        size_kb = os.path.getsize(audio_path) / 1024
-
-        modification_date = datetime.fromtimestamp(
-            os.path.getmtime(audio_path)
-        )
-
-        audio_format = audio_path.suffix.replace(".", "").lower()
-
-        return (
-            duration,
-            sample_rate,
-            channels,
-            bit_depth,
-            size_kb,
-            modification_date,
-            audio_format,
-        )
+    return (
+        duration,
+        sample_rate,
+        channels,
+        bit_depth,
+        size_kb,
+        modification_date,
+        audio_format,
+    )
 
 
-    def obtener_clase(folder):
+def obtener_clase(folder):
 
-        folder = folder.lower()
+    folder = folder.lower()
 
-        canonical = AudioSet.synonym_to_canonical.get(folder, folder)
+    canonical = AudioSet.synonym_to_canonical.get(folder, folder)
 
-        human_label = canonical
+    human_label = canonical
 
-        info = AudioSet.canonical_info.get(canonical, {})
+    info = AudioSet.canonical_info.get(canonical, {})
 
-        return (
-            canonical,
-            human_label,
-            info.get("environment", "unknown"),
-            info.get("alertable", False),
-            info.get("emergency", False),
-        )
+    return (
+        canonical,
+        human_label,
+        info.get("environment", "unknown"),
+        info.get("alertable", False),
+        info.get("emergency", False),
+    )
 
-    # =====================================
-    # BUILD DATASET
-    # =====================================
-    def build_dataset():
-        dataset = []
+# =====================================
+# BUILD DATASET
+# =====================================
+def build_dataset():
+    dataset = []
 
-        print("\nProcesando audios...\n")
+    print("\nProcesando audios...\n")
 
-        for folder in os.listdir(AUDIOSET_SONIDOS_DIR):
+    for folder in os.listdir(AUDIOSET_SONIDOS_DIR):
 
-            folder_path = AUDIOSET_SONIDOS_DIR / folder
+        folder_path = AUDIOSET_SONIDOS_DIR / folder
 
-            if not folder_path.is_dir():
+        if not folder_path.is_dir():
+            continue
+
+        print(f"Carpeta: {folder}")
+
+        for audio_file in folder_path.glob("*.*"):
+
+            if audio_file.suffix.lower() not in [
+                ".wav", ".mp3", ".flac", ".ogg"
+            ]:
                 continue
 
-            print(f"Carpeta: {folder}")
+            (
+                duration,
+                sample_rate,
+                channels,
+                bit_depth,
+                size_kb,
+                modification_date,
+                audio_format,
+            ) = AudioSet.obtener_metadata(audio_file)
 
-            for audio_file in folder_path.glob("*.*"):
+            (
+                canonical,
+                human_label,
+                env,
+                alertable,
+                emergency,
+            ) = AudioSet.obtener_clase(folder)
 
-                if audio_file.suffix.lower() not in [
-                    ".wav", ".mp3", ".flac", ".ogg"
-                ]:
-                    continue
+            fila = {
+                "audio": audio_file.name,
+                "label": canonical,
+                "labels": [canonical],
+                "human_label": human_label,
+                "human_labels": [human_label],
+                "path": str(audio_file.relative_to(AUDIOSET_SONIDOS_DIR.parent)),
+                "dataset_source": "AudioSet",
+                "split": "train",
+                "env": env,
+                "alertable": alertable,
+                "emergency": emergency,
+                "file_exists": True,
+                "audio_format": audio_format,
+                "duration": round(duration, 3),
+                "sample_rate": sample_rate,
+                "channels": channels,
+                "bit_depth": bit_depth,
+                "bit_velocity": "unknown",
+                "size": round(size_kb, 2),
+                "date_modification": modification_date,
+            }
 
-                (
-                    duration,
-                    sample_rate,
-                    channels,
-                    bit_depth,
-                    size_kb,
-                    modification_date,
-                    audio_format,
-                ) = AudioSet.obtener_metadata(audio_file)
+            dataset.append(fila)
 
-                (
-                    canonical,
-                    human_label,
-                    env,
-                    alertable,
-                    emergency,
-                ) = AudioSet.obtener_clase(folder)
+    # =====================================
+    # SAVE DATASET
+    # =====================================
 
-                fila = {
-                    "audio": audio_file.name,
-                    "label": canonical,
-                    "labels": [canonical],
-                    "human_label": human_label,
-                    "human_labels": [human_label],
-                    "path": str(audio_file.relative_to(AUDIOSET_SONIDOS_DIR.parent)),
-                    "dataset_source": "AudioSet",
-                    "split": "train",
-                    "env": env,
-                    "alertable": alertable,
-                    "emergency": emergency,
-                    "file_exists": True,
-                    "audio_format": audio_format,
-                    "duration": round(duration, 3),
-                    "sample_rate": sample_rate,
-                    "channels": channels,
-                    "bit_depth": bit_depth,
-                    "bit_velocity": "unknown",
-                    "size": round(size_kb, 2),
-                    "date_modification": modification_date,
-                }
+    df = pd.DataFrame(dataset)
 
-                dataset.append(fila)
-
-        # =====================================
-        # SAVE DATASET
-        # =====================================
-
-        df = pd.DataFrame(dataset)
-
-        # ORDEN EXACTO DE COLUMNAS
-        df = df[
-            [
-                "audio",
-                "label",
-                "labels",
-                "human_label",
-                "human_labels",
-                "path",
-                "dataset_source",
-                "split",
-                "env",
-                "alertable",
-                "emergency",
-                "file_exists",
-                "audio_format",
-                "duration",
-                "sample_rate",
-                "channels",
-                "bit_depth",
-                "bit_velocity",
-                "size",
-                "date_modification",
-            ]
+    # ORDEN EXACTO DE COLUMNAS
+    df = df[
+        [
+            "audio",
+            "label",
+            "labels",
+            "human_label",
+            "human_labels",
+            "path",
+            "dataset_source",
+            "split",
+            "env",
+            "alertable",
+            "emergency",
+            "file_exists",
+            "audio_format",
+            "duration",
+            "sample_rate",
+            "channels",
+            "bit_depth",
+            "bit_velocity",
+            "size",
+            "date_modification",
         ]
+    ]
 
-        AUDIOSET_DATASET_PATH.parent.mkdir(parents=True, exist_ok=True)
+    AUDIOSET_DATASET_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-        df.to_csv(AUDIOSET_DATASET_PATH, index=False)
+    df.to_csv(AUDIOSET_DATASET_PATH, index=False)
 
-        print("\n✅ DATASET AUDIOSET CREADO")
-        print(f"Audios totales: {len(df)}")
-        print(f"Guardado en: {AUDIOSET_DATASET_PATH}")
+    print("\n✅ DATASET AUDIOSET CREADO")
+    print(f"Audios totales: {len(df)}")
+    print(f"Guardado en: {AUDIOSET_DATASET_PATH}")
