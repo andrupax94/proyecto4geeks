@@ -335,8 +335,6 @@ class Preprocess:
                 })
                 return result
 
-         
-
             audio_np, sr = sf.read(str(audio_path))
 
             waveform = torch.tensor(audio_np, dtype=torch.float32)
@@ -440,6 +438,12 @@ class Preprocess:
         else:
             df_final = df_new
 
+        # 🔥 GUARDAR EL CSV FINAL (LÍNEA CRÍTICA QUE FALTABA)
+        self.metadata_path.parent.mkdir(parents=True, exist_ok=True)
+        df_final.to_csv(self.metadata_path, index=False)
+        print(f"\n✅ CSV guardado en: {self.metadata_path}")
+        print(f"📊 Total de registros en histórico: {len(df_final)}")
+
         return df_final
 
     def run(self, csv_paths: Optional[Sequence[PathLike]] = None) -> pd.DataFrame:
@@ -465,8 +469,9 @@ def main():
     
   
     # Definimos los nombres de los archivos
-    # csv_filenames = ["ESC50.csv", "UrbanSound8k.csv", "zenodo.csv"]
-    csv_filenames = ["ESC50.csv"]
+    # csv_filenames = ["UrbanSound8k.csv","audioset.csv"]
+    # csv_filenames = ["ESC50.csv"]
+    csv_filenames = ["zenodo.csv"]
 
     # Mapeamos para agregar el raw_dir usando una list comprehension
     csv_paths = [RAW_DIR / f for f in csv_filenames]
