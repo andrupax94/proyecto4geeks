@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 import sys
-
+from src.data.build.audioset import AudioSet
 # =====================================
 # IMPORT CONFIG
 # =====================================
@@ -19,34 +19,34 @@ from src.utils.config import (
     AUDIOSET_DATASET_PATH,
 )
 
-# =====================================
-# LOAD AUX FILES
-# =====================================
-
-print("Cargando sinonimos...")
-sinonimos = pd.read_csv(SINONIMOS_V3_PATH)
-
-print("Cargando canonical clases...")
-canonical_df = pd.read_csv(CANONICAL_CLASSES_PATH)
-
-sinonimos["canonical"] = sinonimos["canonical"].str.lower()
-sinonimos["synonym"] = sinonimos["synonym"].str.lower()
-canonical_df["canonical"] = canonical_df["canonical"].str.lower()
-
-synonym_to_canonical = dict(
-    zip(sinonimos["synonym"], sinonimos["canonical"])
-)
-
-canonical_info = canonical_df.set_index("canonical").to_dict("index")
 
 # =====================================
 # FUNCTIONS
 # =====================================
 class AudioSet:
+    
+    # =====================================
+    # LOAD AUX FILES
+    # =====================================
+
+    print("Cargando sinonimos...")
+    sinonimos = pd.read_csv(SINONIMOS_V3_PATH)
+
+    print("Cargando canonical clases...")
+    canonical_df = pd.read_csv(CANONICAL_CLASSES_PATH)
+
+    sinonimos["canonical"] = sinonimos["canonical"].str.lower()
+    sinonimos["synonym"] = sinonimos["synonym"].str.lower()
+    canonical_df["canonical"] = canonical_df["canonical"].str.lower()
+
+    synonym_to_canonical = dict(
+        zip(sinonimos["synonym"], sinonimos["canonical"])
+    )
+
+    canonical_info = canonical_df.set_index("canonical").to_dict("index")
     def obtener_metadata(audio_path):
         try:
             info = sf.info(audio_path)
-
             duration = info.duration
             sample_rate = info.samplerate
             channels = "Mono" if info.channels == 1 else "Stereo"
@@ -82,11 +82,11 @@ class AudioSet:
 
         folder = folder.lower()
 
-        canonical = synonym_to_canonical.get(folder, folder)
+        canonical = AudioSet.synonym_to_canonical.get(folder, folder)
 
         human_label = canonical
 
-        info = canonical_info.get(canonical, {})
+        info = AudioSet.canonical_info.get(canonical, {})
 
         return (
             canonical,
