@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from src.data.build.dataset import Dataset
 from src.data.build.metadata import MetadataEX
+from src.data.build.audioset.build_audioset_dataset import AudioSet
 from src.utils.config import RAW_DIR, BUILD_DIR
 # --- EJEMPLO DE CONFIGURACIÓN ---
 if __name__ == "__main__":
@@ -27,6 +28,7 @@ if __name__ == "__main__":
     #         split=val[1]
     #     )
     #     print(df_res[key].head())
+    AudioSet.build_dataset()
     nombre_salida = os.path.join(RAW_DIR, "audioset.csv")
     metadata = MetadataEX(
         csv_path=nombre_salida,
