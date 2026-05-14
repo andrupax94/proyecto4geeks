@@ -40,7 +40,10 @@ AUDIOSET_DATASET_PATH = RAW_DIR / "audioset.csv"
 
 ESPECTOGRAMS_DIR = INTERIM_DIR / "processed_dataset"
 
-LABEL_MAPPING = ESPECTOGRAMS_DIR / "label_mapping.pkl"
+LABEL_MAPPING = {
+    "human_label": INTERIM_DIR / "processed_dataset" / "label_mapping_human_label.pkl",
+    "alertable": INTERIM_DIR / "processed_dataset" / "label_mapping_alertable.pkl",
+}
 PROCESSED_METADATA = ESPECTOGRAMS_DIR / "processed_metadata.csv"
 
 # ===============================

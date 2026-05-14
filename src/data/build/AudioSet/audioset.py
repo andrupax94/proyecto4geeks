@@ -28,6 +28,7 @@ from src.utils.config import (
 )
 
 class AudioSet:
+    AudioSet.build_dataset()
     def obtener_metadata(audio_path):
         try:
             info = sf.info(audio_path)

@@ -54,6 +54,7 @@ another_animal,Fowl
 another_animal,Gull_and_seagull
 another_animal,Insect
 another_animal,Cricket
+baby_cry,babycry
 voice,Speech
 voice,Human_voice
 voice,Conversation
@@ -154,6 +155,7 @@ doors,Sliding_door
 doors,Cupboard_open_or_close
 doors,Knock
 glass_metal,Glass
+glass_metal,glassbreak
 glass_metal,Shatter
 glass_metal,Crack
 glass_metal,Crackle
@@ -244,4 +246,13 @@ gun_shot,Gunshot
 gun_shot,gunshot
 gun_shot,Gunshot_and_gunfire
 gun_shot,Firearm_discharge
+gun_shot,Zastava M92
+gun_shot,AK-12
+gun_shot,AK-47
+gun_shot,M16
+gun_shot,MP5
+gun_shot,M4
+gun_shot,IMI Desert Eagle
+gun_shot,MG-42
+gun_shot,M249
 water,Toilet_flush

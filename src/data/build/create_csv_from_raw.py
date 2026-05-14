@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import re
 import hashlib
-from src.utils.config import BUILD_DIR
+from src.utils.config import BUILD_DIR, RAW_DIR
 class Create_csv_from_raw:
     def clave_norm(texto):
         """
@@ -257,7 +257,7 @@ class Create_csv_from_raw:
             if ruta_carpeta is None:
                 raise ValueError("`ruta_carpeta` es obligatorio.")
 
-            ruta_carpeta = Path(ruta_carpeta)
+            ruta_carpeta = Path(RAW_DIR /ruta_carpeta)
             if not ruta_carpeta.exists():
                 raise ValueError(f"`ruta_carpeta` no existe: {ruta_carpeta}")
             filas = []
@@ -271,10 +271,11 @@ class Create_csv_from_raw:
                     continue
 
                 rel_parent = archivo.parent.relative_to(ruta_carpeta)
-                if str(rel_parent) == ".":
+                normalized_label = rel_parent.as_posix().lower().replace(" ", "_")
+                if not normalized_label in mapa_syn_csv.keys():
                     human_label = ruta_carpeta.name
                 else:
-                    human_label = f"{ruta_carpeta.name}/{rel_parent.as_posix()}"
+                    human_label = mapa_syn_csv[normalized_label]
 
                 canonical = normalizar_etiqueta(human_label)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pickle
 import re
 from pathlib import Path, PureWindowsPath
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Tuple, Union, Any
 
 import numpy as np
 import pandas as pd
@@ -28,7 +28,6 @@ DEFAULT_SCALAR_COLUMNS = [
 
 
 class ProcessedAudioDataset(Dataset):
-
     def __init__(
         self,
         metadata_csv: PathLike,
@@ -40,8 +39,7 @@ class ProcessedAudioDataset(Dataset):
         scalar_columns: Optional[Sequence[str]] = None,
         mel_column_candidates: Sequence[str] = ("mel_spec_path", "mel_path"),
         mfcc_column_candidates: Sequence[str] = ("mfcc_path",),
-        label_column: str = "label_encoded",
-        label_name_column: str = "label",
+        target_column: str = "human_label",   # <- NUEVO
     ) -> None:
 
         self.metadata_csv = Path(metadata_csv)
@@ -60,74 +58,62 @@ class ProcessedAudioDataset(Dataset):
         self.mel_column = self._resolve_existing_column(self.df.columns, mel_column_candidates)
         self.mfcc_column = self._resolve_existing_column(self.df.columns, mfcc_column_candidates, required=False)
 
-        self.label_column = label_column if label_column in self.df.columns else None
-        self.label_name_column = label_name_column if label_name_column in self.df.columns else None
+        self.target_column = target_column
+        if self.target_column not in self.df.columns:
+            raise KeyError(f"No existe la columna target '{self.target_column}' en el CSV.")
 
-        self.label_mapping: Optional[Dict[str, int]] = None
+        self.label_mapping: Optional[Dict[Any, int]] = None
         self.num_classes: Optional[int] = None
 
         if label_mapping_path is not None and Path(label_mapping_path).exists():
             with open(label_mapping_path, "rb") as f:
-                self.label_mapping = pickle.load(f)
+                payload = pickle.load(f)
 
-            if isinstance(self.label_mapping, dict) and self.label_mapping:
-                self.num_classes = int(max(int(v) for v in self.label_mapping.values()) + 1)
+            self.label_mapping = self._extract_label_mapping(payload)
+            self.num_classes = len(self.label_mapping)
 
         self.available_scalar_columns = [c for c in self.scalar_columns if c in self.df.columns]
 
-        # 🔥 NORMALIZACIÓN AUTOMÁTICA DE RUTAS (FIX PRINCIPAL)
         self._normalize_dataframe_paths()
 
         self.target_frames = target_frames or self._infer_target_frames()
         self.mel_bins, self.mfcc_bins = self._infer_feature_bins()
 
-    # =========================================================
-    # 🔧 PATH NORMALIZATION (FIX PRINCIPAL)
-    # =========================================================
+    @staticmethod
+    def _extract_label_mapping(payload: Any) -> Dict[Any, int]:
+        """
+        Soporta:
+        - dict plano: {"dog": 0, "gunshot": 1}
+        - dict envuelto: {"label2idx": {...}, "idx2label": {...}, ...}
+        """
+        if isinstance(payload, dict) and "label2idx" in payload:
+            mapping = payload["label2idx"]
+        else:
+            mapping = payload
+
+        if not isinstance(mapping, dict) or not mapping:
+            raise TypeError("El label mapping cargado no tiene el formato esperado.")
+
+        return mapping
 
     @staticmethod
-    def _normalize_path_value(path_value: object, project_root: Path) -> str:
-        if path_value is None or (isinstance(path_value, float) and pd.isna(path_value)):
-            return path_value
+    def _normalize_alertable_value(value: Any) -> Optional[bool]:
+        if pd.isna(value):
+            return None
 
-        path_str = str(path_value).strip()
-        if not path_str:
-            return path_str
+        if isinstance(value, bool):
+            return value
 
-        # Linux path válido
-        if path_str.startswith("/"):
-            return path_str
+        if isinstance(value, (int, np.integer)):
+            return bool(value)
 
-        # Windows absolute path (E:\...)
-        if re.match(r"^[A-Za-z]:\\", path_str):
-            win_path = PureWindowsPath(path_str)
-            parts = win_path.parts
+        text = str(value).strip().lower()
+        if text in {"true", "1", "yes", "y", "t"}:
+            return True
+        if text in {"false", "0", "no", "n", "f"}:
+            return False
 
-            # intenta reconstruir desde proyecto
-            project_name = project_root.name
-
-            for i, part in enumerate(parts):
-                if part.lower() == project_name.lower():
-                    rel_path = Path(*parts[i:])
-                    return str((project_root / rel_path.relative_to(project_name)).resolve()).replace("\\", "/")
-
-            # fallback: elimina drive
-            return str(Path(*parts[1:])).replace("\\", "/")
-
-        return path_str.replace("\\", "/")
-
-    def _normalize_dataframe_paths(self) -> None:
-        project_root = Path.cwd().resolve()
-
-        for col in [self.mel_column, self.mfcc_column, "audio_normalized_path"]:
-            if col is not None and col in self.df.columns:
-                self.df[col] = self.df[col].apply(
-                    lambda x: self._normalize_path_value(x, project_root)
-                )
-
-    # =========================================================
-    # EXISTING LOGIC (UNCHANGED)
-    # =========================================================
+        return None
 
     @staticmethod
     def _resolve_existing_column(columns: Sequence[str], candidates: Sequence[str], required: bool = True) -> Optional[str]:
@@ -138,13 +124,45 @@ class ProcessedAudioDataset(Dataset):
             raise KeyError(f"No encontré ninguna de estas columnas: {list(candidates)}")
         return None
 
+    @staticmethod
+    def _normalize_path_value(path_value: object, project_root: Path) -> str:
+        if path_value is None or (isinstance(path_value, float) and pd.isna(path_value)):
+            return path_value
+
+        path_str = str(path_value).strip()
+        if not path_str:
+            return path_str
+
+        if path_str.startswith("/"):
+            return path_str
+
+        if re.match(r"^[A-Za-z]:\\", path_str):
+            win_path = PureWindowsPath(path_str)
+            parts = win_path.parts
+            project_name = project_root.name
+
+            for i, part in enumerate(parts):
+                if part.lower() == project_name.lower():
+                    rel_path = Path(*parts[i:])
+                    return str((project_root / rel_path.relative_to(project_name)).resolve()).replace("\\", "/")
+
+            return str(Path(*parts[1:])).replace("\\", "/")
+
+        return path_str.replace("\\", "/")
+
+    def _normalize_dataframe_paths(self) -> None:
+        project_root = Path.cwd().resolve()
+
+        for col in [self.mel_column, self.mfcc_column, "audio_normalized_path"]:
+            if col is not None and col in self.df.columns:
+                self.df[col] = self.df[col].apply(lambda x: self._normalize_path_value(x, project_root))
+
     def _infer_target_frames(self) -> int:
         for _, row in self.df.iterrows():
             mel_path = row.get(self.mel_column)
             if isinstance(mel_path, str) and Path(mel_path).exists():
-                arr = np.load(mel_path, mmap_mode="r+")
+                arr = np.load(mel_path, mmap_mode="r")
                 return int(arr.shape[-1]) if arr.ndim in (2, 3) else None
-
         raise FileNotFoundError("No pude inferir target_frames.")
 
     def _infer_feature_bins(self) -> Tuple[int, Optional[int]]:
@@ -154,13 +172,13 @@ class ProcessedAudioDataset(Dataset):
         for _, row in self.df.iterrows():
             mel_path = row.get(self.mel_column)
             if mel_bins is None and isinstance(mel_path, str) and Path(mel_path).exists():
-                arr = np.load(mel_path, mmap_mode="r+")
+                arr = np.load(mel_path, mmap_mode="r")
                 mel_bins = int(arr.shape[-2]) if arr.ndim == 3 else int(arr.shape[0])
 
             if self.use_mfcc and self.mfcc_column is not None:
                 mfcc_path = row.get(self.mfcc_column)
                 if mfcc_bins is None and isinstance(mfcc_path, str) and Path(mfcc_path).exists():
-                    arr = np.load(mfcc_path, mmap_mode="r+")
+                    arr = np.load(mfcc_path, mmap_mode="r")
                     mfcc_bins = int(arr.shape[-2]) if arr.ndim == 3 else int(arr.shape[0])
 
             if mel_bins is not None and (not self.use_mfcc or mfcc_bins is not None):
@@ -173,7 +191,7 @@ class ProcessedAudioDataset(Dataset):
 
     @staticmethod
     def _load_npy(path: str | Path) -> np.ndarray:
-        arr = np.load(path, mmap_mode="r+")
+        arr = np.load(path, mmap_mode="r")
         return np.array(arr, dtype=np.float32, copy=True)
 
     @staticmethod
@@ -199,13 +217,36 @@ class ProcessedAudioDataset(Dataset):
         return arr.astype(np.float32, copy=False)
 
     def _load_label(self, row: pd.Series) -> int:
-        if self.label_column is not None and pd.notna(row.get(self.label_column)):
-            return int(row[self.label_column])
+        raw = row.get(self.target_column)
 
-        if self.label_name_column is not None and self.label_mapping is not None:
-            return int(self.label_mapping[str(row[self.label_name_column])])
+        if pd.isna(raw):
+            raise KeyError(f"No hay valor en la columna target '{self.target_column}'.")
 
-        raise KeyError("No se pudo resolver label.")
+        if self.label_mapping is not None:
+            key = raw
+
+            if self.target_column == "alertable":
+                norm = self._normalize_alertable_value(raw)
+                if norm is not None:
+                    key = norm
+
+            if key in self.label_mapping:
+                return int(self.label_mapping[key])
+
+            key_str = str(key).strip()
+            if key_str in self.label_mapping:
+                return int(self.label_mapping[key_str])
+
+            if self.target_column == "alertable":
+                # fallback extra por si el mapping guardó strings
+                alt = str(bool(key)).capitalize()
+                if alt in self.label_mapping:
+                    return int(self.label_mapping[alt])
+
+            raise KeyError(f"No se pudo mapear la etiqueta '{raw}' con target='{self.target_column}'.")
+
+        # fallback si no hay mapping y ya viene codificado
+        return int(raw)
 
     def __len__(self) -> int:
         return len(self.df)
@@ -221,7 +262,6 @@ class ProcessedAudioDataset(Dataset):
             dtype=np.float32,
             copy=True,
         )
-        
 
         sample = {
             "mel": torch.from_numpy(mel).unsqueeze(0),

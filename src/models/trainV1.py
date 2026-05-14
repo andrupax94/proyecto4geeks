@@ -7,12 +7,12 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
-
+from src.models.hybrid_cnn import HybridAudioClassifier
 
 
 from src.utils.config import PROCESSED_METADATA, LABEL_MAPPING
 from src.models.audio_dataset import ProcessedAudioDataset, crnn_collate_fn
-from src.models.simple_crnn import SimpleMFCCCNN  # ✅ Usar el CNN simple
+
 
 
 # =========================================================
@@ -22,13 +22,48 @@ class CFG:
     batch_size = 16
     lr = 3e-4
     epochs = 20
-    num_workers = 0          # 🔥 IMPORTANTE para evitar segfault ROCm
+    num_workers = 0
     use_mfcc = True
-    use_scalars = False      # ⚠️ No usamos scalars con SimpleMFCCCNN
+    use_scalars = False
     seed = 42
-    print_every = 50         # Imprimir cada 50 batches
+    print_every = 50
+    target_type = "human_label"
+    mode = "mel_only"   # "mel_only", "mel_mfcc", "all_three"
 
+def prepare_model_inputs(batch, device, mode: str):
+    """
+    Devuelve una tupla de tensores según el modo:
+    - mel_only: (mel,)
+    - mel_mfcc: (mel, mfcc)
+    - all_three: (mel, mfcc, waveform)
+    """
+    mel = batch.get("mel", None)
+    mfcc = batch.get("mfcc", None)
+    waveform = batch.get("waveform", None)
 
+    if mel is not None:
+        mel = mel.to(device)
+    if mfcc is not None:
+        mfcc = mfcc.to(device)
+    if waveform is not None:
+        waveform = waveform.to(device)
+
+    if mode == "mel_only":
+        if mel is None:
+            raise KeyError("El batch no contiene 'mel'")
+        return (mel,)
+
+    if mode == "mel_mfcc":
+        if mel is None or mfcc is None:
+            raise KeyError("El batch no contiene 'mel' o 'mfcc'")
+        return (mel, mfcc)
+
+    if mode == "all_three":
+        if mel is None or mfcc is None or waveform is None:
+            raise KeyError("El batch no contiene 'mel', 'mfcc' o 'waveform'")
+        return (mel, mfcc, waveform)
+
+    raise ValueError("mode debe ser 'mel_only', 'mel_mfcc' o 'all_three'")
 # =========================================================
 # REPRODUCIBILIDAD
 # =========================================================
@@ -50,24 +85,63 @@ def get_device():
 # =========================================================
 # DATALOADERS
 # =========================================================
+# =========================================================
+# DATALOADERS
+# =========================================================
 def build_loaders(cfg: CFG):
+
+    # =====================================================
+    # Elegir mapping automáticamente
+    # =====================================================
+    if cfg.target_type == "human_label":
+        label_mapping_path = LABEL_MAPPING["human_label"]
+
+    elif cfg.target_type == "alertable":
+        label_mapping_path = LABEL_MAPPING["alertable"]
+
+    else:
+        raise ValueError(
+            f"target_type inválido: {cfg.target_type}"
+        )
+
+    print(f"\n🎯 Target seleccionado: {cfg.target_type}")
+    print(f"🗂️ Label mapping: {label_mapping_path}")
+
+    # =====================================================
+    # TRAIN
+    # =====================================================
     train_ds = ProcessedAudioDataset(
         metadata_csv=PROCESSED_METADATA,
-        label_mapping_path=LABEL_MAPPING,
+        label_mapping_path=label_mapping_path,
         split="train",
+
+        # 🔥 columna target
+        target_column=cfg.target_type,
+
         use_mfcc=cfg.use_mfcc,
         use_scalars=cfg.use_scalars,
     )
 
+    # =====================================================
+    # TEST
+    # =====================================================
     test_ds = ProcessedAudioDataset(
         metadata_csv=PROCESSED_METADATA,
-        label_mapping_path=LABEL_MAPPING,
+        label_mapping_path=label_mapping_path,
         split="test",
+
+        # 🔥 misma columna target
+        target_column=cfg.target_type,
+
         use_mfcc=cfg.use_mfcc,
         use_scalars=cfg.use_scalars,
+
         target_frames=train_ds.target_frames,
     )
 
+    # =====================================================
+    # LOADERS
+    # =====================================================
     train_loader = DataLoader(
         train_ds,
         batch_size=cfg.batch_size,
@@ -95,39 +169,37 @@ def train_one_epoch(model, loader, optimizer, criterion, device, cfg, epoch):
     model.train()
 
     total_loss = 0
-    total_acc = 0
+
+    # ✅ FIX
     y_true, y_pred = [], []
-    
+
     num_batches = len(loader)
 
     for batch_idx, (batch, labels, _) in enumerate(loader, 1):
-        # ⚠️ SimpleMFCCCNN solo usa MFCC
-        mfcc = batch["mfcc"].to(device)
         labels = labels.to(device)
+
+        inputs = prepare_model_inputs(batch, device, cfg.mode)
 
         optimizer.zero_grad()
 
-        # Forward pass - solo mfcc
-        outputs = model(mfcc)
+        outputs = model(*inputs)
+
         loss = criterion(outputs, labels)
 
-        # Backward pass
         loss.backward()
         optimizer.step()
 
         total_loss += loss.item()
 
         preds = outputs.argmax(dim=1)
-        batch_acc = accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
-        total_acc += batch_acc
 
         y_true.extend(labels.cpu().numpy())
         y_pred.extend(preds.cpu().numpy())
 
-        # ✅ Print cada N batches
         if batch_idx % cfg.print_every == 0:
             avg_loss = total_loss / batch_idx
-            avg_acc = total_acc / batch_idx
+            avg_acc = accuracy_score(y_true, y_pred)
+
             print(
                 f"  Epoch {epoch} | Batch {batch_idx}/{num_batches} | "
                 f"Loss: {avg_loss:.4f} | Acc: {avg_acc:.4f}"
@@ -135,7 +207,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device, cfg, epoch):
 
     epoch_loss = total_loss / num_batches
     epoch_acc = accuracy_score(y_true, y_pred)
-    
+
     return epoch_loss, epoch_acc
 
 
@@ -147,32 +219,27 @@ def evaluate(model, loader, criterion, device, cfg, epoch):
     model.eval()
 
     total_loss = 0
-    total_acc = 0
-    y_true, y_pred = [], []
-    
+    y_true, y_pred = [],[]
+
     num_batches = len(loader)
 
     for batch_idx, (batch, labels, _) in enumerate(loader, 1):
-        # ⚠️ SimpleMFCCCNN solo usa MFCC
-        mfcc = batch["mfcc"].to(device)
         labels = labels.to(device)
 
-        outputs = model(mfcc)
+        inputs = prepare_model_inputs(batch, device, cfg.mode)
+
+        outputs = model(*inputs)
         loss = criterion(outputs, labels)
 
         total_loss += loss.item()
 
         preds = outputs.argmax(dim=1)
-        batch_acc = accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
-        total_acc += batch_acc
-
         y_true.extend(labels.cpu().numpy())
         y_pred.extend(preds.cpu().numpy())
 
-        # ✅ Print cada N batches en evaluación también
         if batch_idx % cfg.print_every == 0:
             avg_loss = total_loss / batch_idx
-            avg_acc = total_acc / batch_idx
+            avg_acc = accuracy_score(y_true, y_pred)
             print(
                 f"  Epoch {epoch} | Val Batch {batch_idx}/{num_batches} | "
                 f"Loss: {avg_loss:.4f} | Acc: {avg_acc:.4f}"
@@ -180,7 +247,6 @@ def evaluate(model, loader, criterion, device, cfg, epoch):
 
     epoch_loss = total_loss / num_batches
     epoch_acc = accuracy_score(y_true, y_pred)
-    
     return epoch_loss, epoch_acc
 
 
@@ -212,8 +278,13 @@ def main():
     print(f"   - LR: {cfg.lr}")
     print("=" * 70)
 
-    model = SimpleMFCCCNN(
+  
+
+    model = HybridAudioClassifier(
         num_classes=num_classes,
+        mode=cfg.mode,
+        branch_dim=128,
+        hidden_dim=256,
         dropout=0.25,
     ).to(device)
 

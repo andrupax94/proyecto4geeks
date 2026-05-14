@@ -42,7 +42,7 @@ model-*.bin
 .vscode/
 .idea/
 *.swp
-src/data/build/ESC50/ESC-50
+*.wav
 data/*/*.wav
 data/*/*/*.wav
 data/*/*/*/*.wav

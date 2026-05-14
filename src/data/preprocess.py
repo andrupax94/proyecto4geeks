@@ -26,6 +26,7 @@ import torch.nn.functional as F
 import torchaudio
 import torchaudio.transforms as T
 from tqdm import tqdm
+import pickle
 from src.utils.config import RAW_DIR,INTERIM_DIR
 warnings.filterwarnings("ignore")
 
@@ -48,8 +49,12 @@ class PreprocessConfig:
     save_mel: bool = True
     save_mfcc: bool = True
 
+   
     output_subdir: str = "processed_dataset"
     metadata_filename: str = "processed_metadata.csv"
+
+    label_mapping_human_filename: str = "label_mapping_human_label.pkl"
+    label_mapping_alertable_filename: str = "label_mapping_alertable.pkl"
 
     file_path_candidates: Sequence[str] = ("file_path", "path", "filepath", "audio_path", "filename", "audio")
     label_candidates: Sequence[str] = ("human_label", "human_labels", "label", "keywords", "class", "target", "category")
@@ -69,6 +74,7 @@ class Preprocess:
         config: Optional[PreprocessConfig] = None,
         device: Optional[str] = None,
     ) -> None:
+       
         self.config = config or PreprocessConfig()
         self.csv_paths = [Path(p) for p in csv_paths] if csv_paths is not None else []
         self.raw_dir = Path(raw_dir) if raw_dir is not None else None
@@ -83,6 +89,8 @@ class Preprocess:
 
         self.output_dir = self._resolve_output_dir()
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.label_mapping_human_path = self.output_dir / self.config.label_mapping_human_filename
+        self.label_mapping_alertable_path = self.output_dir / self.config.label_mapping_alertable_filename
         self.metadata_path = self.output_dir / self.config.metadata_filename
 
         self._resampler_cache: Dict[int, torchaudio.transforms.Resample] = {}
@@ -107,7 +115,75 @@ class Preprocess:
                 "power": 2.0,
             },
         ).to(self.device)
+    def _save_pickle(self, obj: Any, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("wb") as f:
+            pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+
+    @staticmethod
+    def _normalize_alertable_value(value: Any) -> Optional[bool]:
+        if pd.isna(value):
+            return None
+
+        if isinstance(value, bool):
+            return value
+
+        if isinstance(value, (int, np.integer)):
+            return bool(value)
+
+        text = str(value).strip().lower()
+        if text in {"true", "1", "yes", "y", "t"}:
+            return True
+        if text in {"false", "0", "no", "n", "f"}:
+            return False
+
+        return None
+
+
+    def _build_label_mapping(self, df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
+        if target_col not in df.columns:
+            raise ValueError(f"No existe la columna '{target_col}' en el dataframe.")
+
+        series = df[target_col].dropna()
+
+        if target_col == "alertable":
+            values = []
+            for v in series.tolist():
+                norm = self._normalize_alertable_value(v)
+                if norm is not None:
+                    values.append(norm)
+
+            unique_values = sorted(set(values))
+            label2idx = {bool(v): i for i, v in enumerate(unique_values)}
+            idx2label = {i: bool(v) for v, i in label2idx.items()}
+
+        else:
+            values = [str(v).strip() for v in series.tolist() if str(v).strip()]
+            unique_values = sorted(set(values), key=lambda x: x.lower())
+            label2idx = {label: i for i, label in enumerate(unique_values)}
+            idx2label = {i: label for label, i in label2idx.items()}
+
+        return {
+            "target_col": target_col,
+            "label2idx": label2idx,
+            "idx2label": idx2label,
+            "num_classes": len(label2idx),
+        }
+
+
+    def _generate_label_mappings(self, df: pd.DataFrame) -> None:
+        # Mapeo para human_label
+        if "human_label" in df.columns:
+            human_map = self._build_label_mapping(df, "human_label")
+            self._save_pickle(human_map, self.label_mapping_human_path)
+            print(f"🧩 Label mapping guardado: {self.label_mapping_human_path}")
+
+        # Mapeo para alertable
+        if "alertable" in df.columns:
+            alert_map = self._build_label_mapping(df, "alertable")
+            self._save_pickle(alert_map, self.label_mapping_alertable_path)
+            print(f"🧩 Label mapping guardado: {self.label_mapping_alertable_path}")
     # ---------------------------
     # Resolución de rutas/columnas
     # ---------------------------
@@ -443,7 +519,7 @@ class Preprocess:
         df_final.to_csv(self.metadata_path, index=False)
         print(f"\n✅ CSV guardado en: {self.metadata_path}")
         print(f"📊 Total de registros en histórico: {len(df_final)}")
-
+        self._generate_label_mappings(df_final)
         return df_final
 
     def run(self, csv_paths: Optional[Sequence[PathLike]] = None) -> pd.DataFrame:
@@ -469,9 +545,8 @@ def main():
     
   
     # Definimos los nombres de los archivos
-    # csv_filenames = ["UrbanSound8k.csv","audioset.csv"]
-    # csv_filenames = ["ESC50.csv"]
-    csv_filenames = ["zenodo.csv"]
+    csv_filenames = ["UrbanSound8k.csv","audioset.csv","ESC50.csv","zenodo.csv","Guns_DS.csv","VOIce.csv"]
+
 
     # Mapeamos para agregar el raw_dir usando una list comprehension
     csv_paths = [RAW_DIR / f for f in csv_filenames]
@@ -504,7 +579,7 @@ def main():
     print("\n--- Resumen del proceso ---")
     print(df_processed.head())
     print(f"Total de registros en el histórico: {len(df_processed)}")
-
+    
 
 if __name__ == "__main__":
     main()

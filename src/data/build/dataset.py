@@ -222,6 +222,8 @@ if __name__ == "__main__":
             RAW_DIR / "ESC50.csv",
             RAW_DIR / "UrbanSound8k.csv",
             RAW_DIR / "audioset.csv",
+            RAW_DIR / "Guns_DS.csv",
+            RAW_DIR / "VOICe.csv",
             ]
     Dataset.concatenar_y_ordenar_csvs(archivos ,"audio" , RAW_DIR / "dataset_final.csv")
         
