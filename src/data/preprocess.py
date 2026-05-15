@@ -18,6 +18,9 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
+from pathlib import Path, PureWindowsPath
+import re
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -232,30 +235,102 @@ class Preprocess:
             "split": self._infer_column(df, self.config.split_candidates, required=False) or "split",
         }
 
-    # ---------------------------
-    # Audio helpers
-    # ---------------------------
+    def _normalize_path_text(self, value: Any) -> str:
+        """
+        Normaliza rutas provenientes de CSVs Windows/Linux.
+        """
+        s = str(value).strip().strip('"').strip("'")
+
+        # Windows -> Linux compatible
+        s = s.replace("\\", "/")
+
+        # Limpia barras duplicadas
+        s = re.sub(r"/+", "/", s)
+
+        return s
+
+
     def _audio_path_from_row(self, row: pd.Series, path_col: str) -> Path:
-        raw_value = str(row[path_col])
-        candidate = Path(raw_value)
+        """
+        Resuelve rutas de audio de forma robusta para:
+        - Linux
+        - Windows
+        - rutas relativas
+        - rutas absolutas
+        - CSVs mezclados
+        """
 
+        raw_value = row[path_col]
+        normalized = self._normalize_path_text(raw_value)
+
+        candidate = Path(normalized)
+
+        # ---------------------------------------------------
+        # 1) Ruta absoluta existente
+        # ---------------------------------------------------
         if candidate.is_absolute() and candidate.exists():
-            return candidate
+            return candidate.resolve()
 
-        if self.raw_dir is not None:
-            joined = self.raw_dir / candidate
-            if joined.exists():
-                return joined
-
-            joined_name = self.raw_dir / candidate.name
-            if joined_name.exists():
-                return joined_name
-
+        # ---------------------------------------------------
+        # 2) Existe relativa al cwd
+        # ---------------------------------------------------
         if candidate.exists():
-            return candidate
+            return candidate.resolve()
 
+        # ---------------------------------------------------
+        # 3) Resolver usando raw_dir
+        # ---------------------------------------------------
+        if self.raw_dir is not None:
+
+            raw_dir = Path(self.raw_dir)
+
+            # Caso típico:
+            # sonidos/music/file.wav
+            p1 = raw_dir / candidate
+            if p1.exists():
+                return p1.resolve()
+
+            # ---------------------------------------------------
+            # 4) Si el CSV ya contiene ".../data/raw/..."
+            # recortar desde el nombre de raw_dir
+            # ---------------------------------------------------
+            candidate_parts = list(candidate.parts)
+
+            raw_name = raw_dir.name.lower()
+
+            for idx, part in enumerate(candidate_parts):
+                if part.lower() == raw_name:
+                    trimmed = Path(*candidate_parts[idx + 1:])
+                    p2 = raw_dir / trimmed
+
+                    if p2.exists():
+                        return p2.resolve()
+
+            # ---------------------------------------------------
+            # 5) Intentar solo por nombre de archivo
+            # ---------------------------------------------------
+            p3 = raw_dir / candidate.name
+
+            if p3.exists():
+                return p3.resolve()
+
+            # ---------------------------------------------------
+            # 6) Búsqueda recursiva (más lenta)
+            # útil para datasets inconsistentes
+            # ---------------------------------------------------
+            try:
+                matches = list(raw_dir.rglob(candidate.name))
+
+                if matches:
+                    return matches[0].resolve()
+
+            except Exception:
+                pass
+
+        # ---------------------------------------------------
+        # 7) Fallback final
+        # ---------------------------------------------------
         return candidate
-
     def _get_resampler(self, orig_sr: int) -> Optional[torchaudio.transforms.Resample]:
         if orig_sr == self.config.sample_rate:
             return None

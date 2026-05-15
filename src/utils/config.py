@@ -45,6 +45,7 @@ LABEL_MAPPING = {
     "alertable": INTERIM_DIR / "processed_dataset" / "label_mapping_alertable.pkl",
 }
 PROCESSED_METADATA = ESPECTOGRAMS_DIR / "processed_metadata.csv"
+PROCESSED_METADATA_SPLIT_FIX = ESPECTOGRAMS_DIR / "dataset_fixed.csv"
 
 # ===============================
 # DATASETS FINALES

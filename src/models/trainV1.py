@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from src.models.hybrid_cnn import ImprovedMFCCCNN
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 import glob
-from src.utils.config import PROCESSED_METADATA, LABEL_MAPPING,CHECKPOINT_DIR, FINAL_MODEL_DIR
+from src.utils.config import PROCESSED_METADATA,PROCESSED_METADATA_SPLIT_FIX, LABEL_MAPPING,CHECKPOINT_DIR, FINAL_MODEL_DIR
 from src.models.audio_dataset import ProcessedAudioDataset, crnn_collate_fn
 
 
@@ -149,7 +149,7 @@ def build_loaders(cfg: CFG):
     # TRAIN
     # =====================================================
     train_ds = ProcessedAudioDataset(
-        metadata_csv=PROCESSED_METADATA,
+        metadata_csv=PROCESSED_METADATA_SPLIT_FIX,
         label_mapping_path=label_mapping_path,
         split="train",
 
@@ -164,7 +164,7 @@ def build_loaders(cfg: CFG):
     # TEST
     # =====================================================
     test_ds = ProcessedAudioDataset(
-        metadata_csv=PROCESSED_METADATA,
+        metadata_csv=PROCESSED_METADATA_SPLIT_FIX,
         label_mapping_path=label_mapping_path,
         split="test",
 
@@ -328,7 +328,7 @@ def main():
 
     print("=" * 70)
     print(f"🚀 Device: {device}")
-    print(f"📦 Metadata: {PROCESSED_METADATA}")
+    print(f"📦 Metadata: {PROCESSED_METADATA_SPLIT_FIX}")
     print(f"🎵 Modelo: ImprovedMFCCCNN")
     print("=" * 70)
 
