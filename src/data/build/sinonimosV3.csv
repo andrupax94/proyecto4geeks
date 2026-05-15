@@ -54,7 +54,7 @@ another_animal,Fowl
 another_animal,Gull_and_seagull
 another_animal,Insect
 another_animal,Cricket
-baby_cry,babycry
+
 voice,Speech
 voice,Human_voice
 voice,Conversation
@@ -94,6 +94,7 @@ breathing,Sneeze
 breathing,Respiratory_sounds
 breathing,Hiss
 crying,Crying_and_sobbing
+crying,babycry
 crying,RAVDESS_disgust
 crying,Disgust_speech
 alert_sirem,Alarm

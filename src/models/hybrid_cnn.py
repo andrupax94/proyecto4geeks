@@ -1,123 +1,111 @@
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 
 
-class Conv2DBranch(nn.Module):
-    def __init__(self, in_channels: int = 1, out_dim: int = 128):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv2d(in_channels, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
+class ImprovedMFCCCNN(nn.Module):
+    """
+    CNN mejorado para clasificación de 206 clases
+    - Arquitectura más profunda
+    - Más canales
+    - Mejor regularización
+    """
 
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d((1, 1)),
-
-            nn.Flatten(),
-            nn.Linear(128, out_dim),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.3),
-        )
-
-    def forward(self, x):
-        # x: [B, F, T] -> [B, 1, F, T]
-        if x.dim() == 3:
-            x = x.unsqueeze(1)
-        return self.net(x)
-
-
-class Conv1DBranch(nn.Module):
-    def __init__(self, in_channels: int = 1, out_dim: int = 128):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv1d(in_channels, 32, kernel_size=9, padding=4),
-            nn.BatchNorm1d(32),
-            nn.ReLU(inplace=True),
-            nn.MaxPool1d(4),
-
-            nn.Conv1d(32, 64, kernel_size=7, padding=3),
-            nn.BatchNorm1d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool1d(4),
-
-            nn.Conv1d(64, 128, kernel_size=5, padding=2),
-            nn.BatchNorm1d(128),
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool1d(1),
-
-            nn.Flatten(),
-            nn.Linear(128, out_dim),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.3),
-        )
-
-    def forward(self, x):
-        # x: [B, T] -> [B, 1, T]
-        if x.dim() == 3:
-            # Si viene como [B, C, T], colapsar canales si hace falta
-            if x.size(1) > 1:
-                x = x.mean(dim=1)
-            else:
-                x = x.squeeze(1)
-        if x.dim() == 2:
-            x = x.unsqueeze(1)
-        return self.net(x)
-
-
-class HybridAudioClassifier(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        mode: str = "mel_only",
-        branch_dim: int = 128,
-        hidden_dim: int = 256,
-        dropout: float = 0.4,
+        dropout: float = 0.3,
     ):
         super().__init__()
-        self.mode = mode
 
-        if mode not in {"mel_only", "mel_mfcc", "all_three"}:
-            raise ValueError("mode debe ser: mel_only, mel_mfcc o all_three")
-
-        self.use_mel = mode in {"mel_only", "mel_mfcc", "all_three"}
-        self.use_mfcc = mode in {"mel_mfcc", "all_three"}
-        self.use_waveform = mode == "all_three"
-
-        if self.use_mel:
-            self.mel_branch = Conv2DBranch(out_dim=branch_dim)
-        if self.use_mfcc:
-            self.mfcc_branch = Conv2DBranch(out_dim=branch_dim)
-        if self.use_waveform:
-            self.waveform_branch = Conv1DBranch(out_dim=branch_dim)
-
-        n_branches = int(self.use_mel) + int(self.use_mfcc) + int(self.use_waveform)
-
-        self.classifier = nn.Sequential(
-            nn.Linear(n_branches * branch_dim, hidden_dim),
+        # Convoluciones - Arquitectura más potente
+        self.cnn = nn.Sequential(
+            # Block 1
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, num_classes),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(1, 2)),
+            nn.Dropout2d(dropout),
+
+            # Block 2
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(1, 2)),
+            nn.Dropout2d(dropout),
+
+            # Block 3
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(1, 2)),
+            nn.Dropout2d(dropout),
+
+            # Block 4
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(dropout),
         )
 
-    def forward(self, mel, mfcc=None, waveform=None):
-        feats = []
+        # Global Average Pooling
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
 
-        if self.use_mel:
-            feats.append(self.mel_branch(mel))
+        # Clasificador más robusto
+        self.classifier = nn.Sequential(
+            nn.Linear(512, 1024),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            
+            nn.Linear(1024, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            
+            nn.Linear(512, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            
+            nn.Linear(256, num_classes),
+        )
 
-        if self.use_mfcc:
-            feats.append(self.mfcc_branch(mfcc))
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x: [B, 1, F, T] - MFCC espectrograma
+        output: [B, num_classes]
+        """
+        x = self.cnn(x)
+        x = self.global_pool(x)
+        x = x.view(x.size(0), -1)
+        logits = self.classifier(x)
+        return logits
 
-        if self.use_waveform:
-            feats.append(self.waveform_branch(waveform))
 
-        x = torch.cat(feats, dim=1)
-        return self.classifier(x)
+# ============================================================
+# TEST
+# ============================================================
+if __name__ == "__main__":
+    import os
+    
+    os.environ["MIOPEN_FIND_ENFORCE"] = "SEARCH_DB_ONLY"
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # Test con 206 clases
+    model = ImprovedMFCCCNN(num_classes=206, dropout=0.3).to(device)
+    
+    print("✅ Modelo para 206 clases creado")
+    print(f"Parámetros: {sum(p.numel() for p in model.parameters()):,}\n")
+    
+    # Test forward
+    mfcc = torch.randn(4, 1, 40, 256, device=device)
+    output = model(mfcc)
+    loss = output.mean()
+    loss.backward()
+    
+    print(f"✅ Forward: {output.shape}")
+    print(f"✅ Backward: OK")

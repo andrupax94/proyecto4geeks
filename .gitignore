@@ -50,7 +50,7 @@ data/*/*/*/*.wav
 data/*/*.npy
 data/*/*/*.npy
 data/*/*/*/*.npy
-
+models/checkpoints/*
 proyecto4geeks.egg-info/
 # ===== Cache =====
 .git/

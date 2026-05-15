@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
-
+from src.utils.config import CHECKPOINT_DIR, HISTORY_DIR, FINAL_MODEL_DIR
 # --- FIX PARA AMD EN WINDOWS ---
 # Desactiva el dropout de MIOpen que rompe la GRU
 os.environ["MIOPEN_DEBUG_DISABLE_DROPOUT"] = "1"

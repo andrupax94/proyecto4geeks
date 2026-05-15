@@ -545,7 +545,7 @@ def main():
     
   
     # Definimos los nombres de los archivos
-    csv_filenames = ["UrbanSound8k.csv","audioset.csv","ESC50.csv","zenodo.csv","Guns_DS.csv","VOIce.csv"]
+    csv_filenames = ["UrbanSound8k.csv","audioset.csv","ESC50.csv","zenodo.csv","Guns_DS.csv","VOICe.csv"]
 
 
     # Mapeamos para agregar el raw_dir usando una list comprehension

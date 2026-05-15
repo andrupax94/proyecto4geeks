@@ -55,6 +55,7 @@ DATASET_FINAL = RAW_DIR / "dataset_final.csv"
 # ===============================
 # MODELOS
 # ===============================
-
-CHECKPOINT_DIR = ROOT_DIR / "models" / "checkpoints"
-FINAL_MODEL_DIR = ROOT_DIR / "models" / "final"
+MODELS_DIR = ROOT_DIR / "models"
+CHECKPOINT_DIR = MODELS_DIR / "checkpoints"
+HISTORY_DIR = MODELS_DIR / "history"
+FINAL_MODEL_DIR = MODELS_DIR / "final"
