@@ -654,7 +654,7 @@ def main():
     print("\n--- Resumen del proceso ---")
     print(df_processed.head())
     print(f"Total de registros en el histórico: {len(df_processed)}")
-    
+    return df_processed
 
 if __name__ == "__main__":
     main()
