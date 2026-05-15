@@ -18,7 +18,7 @@ class CFG:
     batch_size = 32
     lr = 3e-4
     weight_decay = 1e-2
-    epochs = 30
+    epochs = 12
     num_workers = 11
     use_mfcc = True
     use_scalars = False
