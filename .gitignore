@@ -1,70 +1,103 @@
+# =========================================================
+# .gitignore
+# Reglas para excluir archivos y carpetas del control de versiones
+# =========================================================
 
-# description: Rules to exclude files and folders from version control; covers binaries virtualenvs and build artifacts
-# owner: Dev
-# priority: Minimum
-# notes: Update when adding new tools or binaries for RPi5 or CI
-# context: Version control rules
-
-# ===== Python =====
-**/__pycache__/**
-
-**pycache/**
+# =========================
+# Python
+# =========================
+__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.egg-info/
+*.so
+
+# Build / packaging
+build/
 dist/
+site/
 .eggs/
-pyproject.toml
-# ===== Virtualenv =====
-rocm_env
+*.egg
+*.egg-info/
+
+# =========================
+# Virtual environments
+# =========================
 venv/
-.env/
-.env.local
+.venv/
+env/
+ENV/
+rocm_env/
 
-# ===== OS =====
+# =========================
+# Testing / cache
+# =========================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+htmlcov/
 
-.DS_Store
-Thumbs.db
-
-# ===== Logs =====
-*.zip
-*.log
-
-# ===== Modelos LLM (NO subir a Git) =====
-
-*.gguf
-
-model-*.bin
-
-# ===== IDE =====
-.vscode/*
+# =========================
+# IDE / Editor
+# =========================
 .vscode/
 .idea/
 *.swp
-*.wav
-data/*/*.wav
-data/*/*/*.wav
-data/*/*/*/*.wav
+*.swo
 
-data/*/*.npy
-data/*/*/*.npy
-data/*/*/*/*.npy
-models/checkpoints/*
-proyecto4geeks.egg-info/
-# ===== Cache =====
-.git/
-.cache/
-.pytest_cache/
-.venv/
-# ===== Configuración sensible =====
-data/raw/**/*.wav
-data/raw/**/*.m4a
-data/raw/**/*.webm
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs / archives
+# =========================
+*.log
+*.zip
+
+# =========================
+# Audio datasets
+# =========================
+*.wav
+*.m4a
+*.webm
+
+# Dataset folders
+data/raw/
+**/sonidos/
+
+# =========================
+# NumPy / ML artifacts
+# =========================
+*.npy
+
+# Model checkpoints
+models/checkpoints/
+
+# LLM / model binaries
+# =========================
+*.gguf
+model-*.bin
+
+# =========================
+# Sensitive config
+# =========================
+.env
+.env.*
 config.local.json
 secrets.json
 settings.local.py
-**/sonidos/
-pyproject.toml
+
+# =========================
+# Project metadata
+# =========================
+proyecto4geeks.egg-info/
+
+# =========================
+# Optional generated configs
+# =========================
 settings.json
-*.npy
