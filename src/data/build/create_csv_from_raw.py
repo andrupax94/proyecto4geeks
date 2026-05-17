@@ -33,8 +33,8 @@ class Create_csv_from_raw:
         dataset_name="zenodo",
         split="train",
         nocsv=False,
-        ruta_csv_sinonimos=BUILD_DIR / "sinonimosV3.csv",
-        ruta_csv_alert_env=BUILD_DIR / "canonical_clases.csv",
+        ruta_csv_sinonimos=BUILD_DIR / "sinonimosV4.csv",
+        ruta_csv_alert_env=BUILD_DIR / "canonical_clasesV2.csv",
     ):
         """
         Genera un CSV de audio en dos modos:
@@ -273,7 +273,7 @@ class Create_csv_from_raw:
                 rel_parent = archivo.parent.relative_to(ruta_carpeta)
                 normalized_label = rel_parent.as_posix().lower().replace(" ", "_")
                 if not normalized_label in mapa_syn_csv.keys():
-                    human_label = ruta_carpeta.name
+                    human_label = normalized_label
                 else:
                     human_label = mapa_syn_csv[normalized_label]
 
@@ -487,6 +487,8 @@ class Create_csv_from_raw:
                 lambda row: os.path.join(f"{ruta_carpeta}/fold{row['fold']}", row["audio"]),
                 axis=1
             )
+        elif dataset_name == "driver_safety":
+            df["path"] = df["audio"].apply(lambda x: os.path.join(str(f"{ruta_carpeta}{split}/"), x))
         else:
             df["path"] = df["audio"].apply(lambda x: os.path.join(str(ruta_carpeta), x))
 

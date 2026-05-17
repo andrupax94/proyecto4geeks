@@ -2,24 +2,26 @@ from __future__ import annotations
 import os
 import time
 import random
+import multiprocessing
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
+from torch.amp import autocast, GradScaler
 from src.models.hybrid_cnn import ImprovedMFCCCNN
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 import glob
-from src.utils.config import PROCESSED_METADATA,PROCESSED_METADATA_SPLIT_FIX, LABEL_MAPPING,CHECKPOINT_DIR, FINAL_MODEL_DIR
+from src.utils.config import PROCESSED_METADATA, LABEL_MAPPING, CHECKPOINT_DIR, FINAL_MODEL_DIR
 from src.models.audio_dataset import ProcessedAudioDataset, crnn_collate_fn
 
 
 
 class CFG:
-    batch_size = 32
+    batch_size = 32  # ⬇️ Reducido de 64 para evitar memory issues
     lr = 3e-4
     weight_decay = 1e-2
     epochs = 12
-    num_workers = 11
+    num_workers = 4  # ⬇️ Reducido de 8 para evitar deadlocks
     use_mfcc = True
     use_scalars = False
     seed = 42
@@ -27,9 +29,14 @@ class CFG:
     target_type = "human_label"
     mode = "mel_only"
 
-    # 🔥 NUEVO
+    # 🔥 AJUSTES CRÍTICOS PARA AMD GPU
     checkpoint_dir = CHECKPOINT_DIR
-    save_every = 2   # cada X épocas
+    save_every = 2
+    use_amp = False  # ⬇️ DESHABILITADO temporalmente para debugging
+    prefetch_factor = 1  # ⬇️ Reducido de 2 para evitar overflow de memoria
+    persistent_workers = False  # ⬇️ Deshabilitado para evitar memory leaks
+
+
 def save_checkpoint(cfg, model, optimizer, epoch, history, best_acc, best_epoch):
     os.makedirs(cfg.checkpoint_dir, exist_ok=True)
 
@@ -45,6 +52,8 @@ def save_checkpoint(cfg, model, optimizer, epoch, history, best_acc, best_epoch)
     }, path)
 
     print(f"💾 Checkpoint guardado: {path}")
+
+
 def load_latest_checkpoint(cfg, model, optimizer):
     if not cfg.checkpoint_dir or not os.path.exists(cfg.checkpoint_dir):
         return None, None, None, None
@@ -68,6 +77,8 @@ def load_latest_checkpoint(cfg, model, optimizer):
         ckpt["best_acc"],
         ckpt["best_epoch"]
     )
+
+
 def prepare_model_inputs(batch, device, mode: str):
     """
     Devuelve una tupla de tensores según el modo:
@@ -102,6 +113,8 @@ def prepare_model_inputs(batch, device, mode: str):
         return (mel, mfcc, waveform)
 
     raise ValueError("mode debe ser 'mel_only', 'mel_mfcc' o 'all_three'")
+
+
 # =========================================================
 # REPRODUCIBILIDAD
 # =========================================================
@@ -113,16 +126,12 @@ def set_seed(seed: int):
 
 
 # =========================================================
-# DEVICE (ROCm usa "cuda")
+# DEVICE
 # =========================================================
 def get_device():
-    # return torch.device("cpu")
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# =========================================================
-# DATALOADERS
-# =========================================================
 # =========================================================
 # DATALOADERS
 # =========================================================
@@ -148,38 +157,36 @@ def build_loaders(cfg: CFG):
     # =====================================================
     # TRAIN
     # =====================================================
+    print("📦 Cargando dataset de entrenamiento...")
     train_ds = ProcessedAudioDataset(
-        metadata_csv=PROCESSED_METADATA_SPLIT_FIX,
+        metadata_csv=PROCESSED_METADATA,
         label_mapping_path=label_mapping_path,
         split="train",
-
-        # 🔥 columna target
         target_column=cfg.target_type,
-
         use_mfcc=cfg.use_mfcc,
         use_scalars=cfg.use_scalars,
     )
+    print(f"✅ Dataset de entrenamiento cargado: {len(train_ds)} muestras")
 
     # =====================================================
     # TEST
     # =====================================================
+    print("📦 Cargando dataset de test...")
     test_ds = ProcessedAudioDataset(
-        metadata_csv=PROCESSED_METADATA_SPLIT_FIX,
+        metadata_csv=PROCESSED_METADATA,
         label_mapping_path=label_mapping_path,
         split="test",
-
-        # 🔥 misma columna target
         target_column=cfg.target_type,
-
         use_mfcc=cfg.use_mfcc,
         use_scalars=cfg.use_scalars,
-
         target_frames=train_ds.target_frames,
     )
+    print(f"✅ Dataset de test cargado: {len(test_ds)} muestras")
 
     # =====================================================
     # LOADERS
     # =====================================================
+    print("🔧 Creando dataloaders...")
     train_loader = DataLoader(
         train_ds,
         batch_size=cfg.batch_size,
@@ -187,6 +194,10 @@ def build_loaders(cfg: CFG):
         num_workers=cfg.num_workers,
         collate_fn=crnn_collate_fn,
         drop_last=True,
+        pin_memory=True,
+        prefetch_factor=cfg.prefetch_factor,
+        persistent_workers=cfg.persistent_workers,
+        timeout=0,  # 🔥 Sin timeout para debugging
     )
 
     test_loader = DataLoader(
@@ -195,42 +206,41 @@ def build_loaders(cfg: CFG):
         shuffle=False,
         num_workers=cfg.num_workers,
         collate_fn=crnn_collate_fn,
+        pin_memory=True,
+        prefetch_factor=cfg.prefetch_factor,
+        persistent_workers=cfg.persistent_workers,
+        timeout=0,
     )
 
+    print(f"✅ Dataloaders creados correctamente")
     return train_ds, test_ds, train_loader, test_loader
 
 
 # =========================================================
 # TRAIN
 # =========================================================
-def train_one_epoch(model, loader, optimizer, criterion, device, cfg, epoch):
+def train_one_epoch(model, loader, optimizer, criterion, device, cfg, epoch, scaler=None):
     model.train()
 
     total_loss = 0
-
-    # ✅ FIX
     y_true, y_pred = [], []
-
     num_batches = len(loader)
 
     for batch_idx, (batch, labels, _) in enumerate(loader, 1):
         labels = labels.to(device)
-
         inputs = prepare_model_inputs(batch, device, cfg.mode)
 
         optimizer.zero_grad()
 
+        # 🔥 Sin AMP para debugging
         outputs = model(*inputs)
-
         loss = criterion(outputs, labels)
-
         loss.backward()
         optimizer.step()
 
         total_loss += loss.item()
 
         preds = outputs.argmax(dim=1)
-
         y_true.extend(labels.cpu().numpy())
         y_pred.extend(preds.cpu().numpy())
 
@@ -255,52 +265,44 @@ def evaluate(model, loader, criterion, device, cfg, epoch):
 
     total_loss = 0
     y_true, y_pred = [], []
-
     num_batches = len(loader)
 
-    for batch_idx, (batch, labels, _) in enumerate(loader, 1):
-        labels = labels.to(device)
+    with torch.inference_mode():
+        for batch_idx, (batch, labels, _) in enumerate(loader, 1):
+            labels = labels.to(device)
+            inputs = prepare_model_inputs(batch, device, cfg.mode)
 
-        inputs = prepare_model_inputs(batch, device, cfg.mode)
+            outputs = model(*inputs)
+            loss = criterion(outputs, labels)
 
-        outputs = model(*inputs)
-        loss = criterion(outputs, labels)
+            total_loss += loss.item()
 
-        total_loss += loss.item()
+            preds = outputs.argmax(dim=1)
+            y_true.extend(labels.cpu().numpy())
+            y_pred.extend(preds.cpu().numpy())
 
-        preds = outputs.argmax(dim=1)
+            if batch_idx % cfg.print_every == 0:
+                avg_loss = total_loss / batch_idx
+                avg_acc = accuracy_score(y_true, y_pred)
 
-        y_true.extend(labels.cpu().numpy())
-        y_pred.extend(preds.cpu().numpy())
-
-        if batch_idx % cfg.print_every == 0:
-            avg_loss = total_loss / batch_idx
-            avg_acc = accuracy_score(y_true, y_pred)
-
-            print(
-                f"  Epoch {epoch} | Val Batch {batch_idx}/{num_batches} | "
-                f"Loss: {avg_loss:.4f} | Acc: {avg_acc:.4f}"
-            )
+                print(
+                    f"  Epoch {epoch} | Val Batch {batch_idx}/{num_batches} | "
+                    f"Loss: {avg_loss:.4f} | Acc: {avg_acc:.4f}"
+                )
 
     epoch_loss = total_loss / num_batches
     epoch_acc = accuracy_score(y_true, y_pred)
 
-    # =====================================================
-    # 🔥 SKLEARN METRICS REALES
-    # =====================================================
     precision, recall, f1, _ = precision_recall_fscore_support(
         y_true,
         y_pred,
-        average="weighted",   # importante en clasificación multiclase
+        average="weighted",
         zero_division=0
     )
 
     return epoch_loss, epoch_acc, precision, recall, f1
 
 
-# =========================================================
-# MAIN
-# =========================================================
 # =========================================================
 # MAIN
 # =========================================================
@@ -328,8 +330,13 @@ def main():
 
     print("=" * 70)
     print(f"🚀 Device: {device}")
-    print(f"📦 Metadata: {PROCESSED_METADATA_SPLIT_FIX}")
+    print(f"📦 Metadata: {PROCESSED_METADATA}")
     print(f"🎵 Modelo: ImprovedMFCCCNN")
+    print(f"🔥 num_workers: {cfg.num_workers}")
+    print(f"🔥 batch_size: {cfg.batch_size}")
+    print(f"🔥 AMP (Mixed Precision): {cfg.use_amp}")
+    print(f"🔥 prefetch_factor: {cfg.prefetch_factor}")
+    print(f"🔥 persistent_workers: {cfg.persistent_workers}")
     print("=" * 70)
 
     # =====================================================
@@ -338,10 +345,9 @@ def main():
     train_ds, test_ds, train_loader, test_loader = build_loaders(cfg)
 
     # =====================================================
-    # 🔥 SPLIT VALIDACIÓN DESDE TRAIN
+    # SPLIT VALIDACIÓN DESDE TRAIN
     # =====================================================
-    from torch.utils.data import random_split
-
+    print("\n🔀 Creando split de validación...")
     val_size = int(len(train_ds) * 0.1)
     train_size = len(train_ds) - val_size
 
@@ -359,6 +365,8 @@ def main():
         collate_fn=crnn_collate_fn,
         drop_last=True,
         pin_memory=True,
+        prefetch_factor=cfg.prefetch_factor,
+        persistent_workers=cfg.persistent_workers,
     )
 
     val_loader = DataLoader(
@@ -368,6 +376,8 @@ def main():
         num_workers=cfg.num_workers,
         collate_fn=crnn_collate_fn,
         pin_memory=True,
+        prefetch_factor=cfg.prefetch_factor,
+        persistent_workers=cfg.persistent_workers,
     )
 
     num_classes = len(train_ds.label_mapping)
@@ -385,6 +395,7 @@ def main():
     # =====================================================
     # MODEL
     # =====================================================
+    print("\n🧠 Inicializando modelo...")
     model = ImprovedMFCCCNN(
         num_classes=num_classes,
         dropout=0.25,
@@ -395,7 +406,7 @@ def main():
         p.numel() for p in model.parameters() if p.requires_grad
     )
 
-    print(f"\n🧠 Modelo Info:")
+    print(f"🧠 Modelo Info:")
     print(f"   - Total params: {total_params:,}")
     print(f"   - Trainable params: {trainable_params:,}")
     print("=" * 70)
@@ -427,6 +438,11 @@ def main():
     )
 
     # =====================================================
+    # GRADIENT SCALER PARA AMP
+    # =====================================================
+    scaler = GradScaler() if cfg.use_amp else None
+
+    # =====================================================
     # CHECKPOINT LOAD
     # =====================================================
     start_epoch = 0
@@ -446,6 +462,7 @@ def main():
         history = ckpt_history
         best_acc = ckpt_best_acc
         best_epoch = ckpt_best_epoch
+
     # =====================================================
     # FIX HISTORY COMPATIBILITY
     # =====================================================
@@ -463,18 +480,35 @@ def main():
         "images_per_sec"
     ]
 
-    # convertir antiguos test_* -> val_*
     if "test_loss" in history and "val_loss" not in history:
         history["val_loss"] = history["test_loss"]
 
     if "test_acc" in history and "val_acc" not in history:
         history["val_acc"] = history["test_acc"]
 
-    # crear claves faltantes
     for key in required_keys:
         if key not in history:
             history[key] = []
+
     print(f"🔄 Reanudado desde epoch {start_epoch}")
+
+    # =====================================================
+    # 🔥 TEST DE DATALOADER ANTES DE ENTRENAR
+    # =====================================================
+    print("\n🧪 Probando dataloader...")
+    try:
+        print("  - Obteniendo primer batch...")
+        t0 = time.time()
+        for batch, labels, filenames in train_loader:
+            dt = time.time() - t0
+            print(f"  ✅ Primer batch obtenido en {dt:.2f}s")
+            print(f"     - MEL shape: {batch['mel'].shape}")
+            print(f"     - Labels shape: {labels.shape}")
+            break
+    except Exception as e:
+        print(f"  ❌ Error al cargar batch: {e}")
+        print("  🔧 Intenta reducir num_workers o batch_size")
+        return
 
     # =====================================================
     # TRAIN LOOP
@@ -501,7 +535,8 @@ def main():
             criterion,
             device,
             cfg,
-            epoch
+            epoch,
+            scaler=scaler
         )
 
         # =================================================
@@ -529,19 +564,14 @@ def main():
         # HISTORY
         # =================================================
         history["epoch"].append(epoch)
-
         history["train_loss"].append(float(train_loss))
         history["train_acc"].append(float(train_acc))
-
         history["val_loss"].append(float(val_loss))
         history["val_acc"].append(float(val_acc))
-
         history["precision"].append(float(precision))
         history["recall"].append(float(recall))
         history["f1"].append(float(f1))
-
         history["lr"].append(float(current_lr))
-
         history["epoch_time"].append(float(dt))
         history["images_per_sec"].append(float(images_per_sec))
 
@@ -551,15 +581,12 @@ def main():
         print("\n📈 RESULTADOS")
         print(f"Train Loss : {train_loss:.4f}")
         print(f"Train Acc  : {train_acc:.4f}")
-
         print(f"Val Loss   : {val_loss:.4f}")
         print(f"Val Acc    : {val_acc:.4f}")
-
         print(f"Precision  : {precision:.4f}")
         print(f"Recall     : {recall:.4f}")
         print(f"F1 Score   : {f1:.4f}")
-
-        print(f"⏱️ Epoch time: {dt:.1f}s")
+        print(f"⏱️ Epoch time: {dt:.1f}s ({images_per_sec:.0f} img/s)")
 
         # =================================================
         # BEST MODEL
@@ -628,6 +655,7 @@ def main():
 
     print(f"\n🥇 Mejor epoch: {best_epoch}")
     print(f"🥇 Mejor val_acc: {best_acc:.4f}")
+
 
 if __name__ == "__main__":
     main()

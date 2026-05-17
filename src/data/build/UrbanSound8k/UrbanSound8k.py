@@ -8,8 +8,8 @@ from src.data.build.metadata import MetadataEX
 from src.utils.config import RAW_DIR, BUILD_DIR
 # --- EJEMPLO DE CONFIGURACIÓN ---
 if __name__ == "__main__":
-    script_dir =  BUILD_DIR / "UrbanSound8K"
-    file_list = {"UrbanSound8k.csv":["UrbanSound8K.csv",0.8]}
+    script_dir =  BUILD_DIR / "UrbanSound8k"
+    file_list = {"UrbanSound8k.csv":["UrbanSound8k.csv",0.8]}
     df_res={}
     for key,val in file_list.items():
         df_original = pd.read_csv(os.path.join(script_dir, val[0]))

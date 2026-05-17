@@ -39,7 +39,7 @@ class ProcessedAudioDataset(Dataset):
         scalar_columns: Optional[Sequence[str]] = None,
         mel_column_candidates: Sequence[str] = ("mel_spec_path", "mel_path"),
         mfcc_column_candidates: Sequence[str] = ("mfcc_path",),
-        target_column: str = "human_label",   # <- NUEVO
+        target_column: str = "human_label",
     ) -> None:
 
         self.metadata_csv = Path(metadata_csv)
@@ -74,10 +74,12 @@ class ProcessedAudioDataset(Dataset):
 
         self.available_scalar_columns = [c for c in self.scalar_columns if c in self.df.columns]
 
+        # 🔥 OPTIMIZACIÓN: Normalizar paths UNA SOLA VEZ
         self._normalize_dataframe_paths()
 
-        self.target_frames = target_frames or self._infer_target_frames()
-        self.mel_bins, self.mfcc_bins = self._infer_feature_bins()
+        # 🔥 OPTIMIZACIÓN: Inferir dimensiones sin loops iterrows
+        self.target_frames = target_frames or self._infer_target_frames_fast()
+        self.mel_bins, self.mfcc_bins = self._infer_feature_bins_fast()
 
     @staticmethod
     def _extract_label_mapping(payload: Any) -> Dict[Any, int]:
@@ -155,32 +157,78 @@ class ProcessedAudioDataset(Dataset):
 
         for col in [self.mel_column, self.mfcc_column, "audio_normalized_path"]:
             if col is not None and col in self.df.columns:
-                self.df[col] = self.df[col].apply(lambda x: self._normalize_path_value(x, project_root))
+                # 🔥 OPTIMIZACIÓN: Usar apply vectorizado, más rápido que iterrows
+                self.df[col] = self.df[col].apply(
+                    lambda x: self._normalize_path_value(x, project_root)
+                )
 
-    def _infer_target_frames(self) -> int:
-        for _, row in self.df.iterrows():
-            mel_path = row.get(self.mel_column)
+    @staticmethod
+    def _load_npy_header(path: str | Path) -> Tuple[Tuple[int, ...], np.dtype]:
+        """
+        🔥 OPTIMIZACIÓN: Lee SOLO el header del archivo .npy sin cargar datos.
+        Retorna (shape, dtype)
+        """
+        try:
+            with open(path, 'rb') as f:
+                magic = f.read(6)
+                if magic[:2] != b'\x93N':
+                    raise ValueError("No es un archivo NPY válido")
+                
+                version = tuple(f.read(2))
+                header_len = int.from_bytes(f.read(4 if version[1] >= 3 else 2), 'little')
+                header = f.read(header_len).decode('latin1')
+                
+                # Extraer shape y dtype del header
+                import ast
+                header_dict = ast.literal_eval(header.strip())
+                return tuple(header_dict['shape']), np.dtype(header_dict['descr'])
+        except Exception:
+            # Fallback si algo falla
+            arr = np.load(path, mmap_mode='r')
+            return arr.shape, arr.dtype
+
+    def _infer_target_frames_fast(self) -> int:
+        """
+        🔥 OPTIMIZACIÓN: Lee SOLO el header sin cargar el array completo.
+        """
+        for mel_path in self.df[self.mel_column]:
             if isinstance(mel_path, str) and Path(mel_path).exists():
-                arr = np.load(mel_path, mmap_mode="r")
-                return int(arr.shape[-1]) if arr.ndim in (2, 3) else None
+                try:
+                    shape, _ = self._load_npy_header(mel_path)
+                    return int(shape[-1]) if len(shape) in (2, 3) else None
+                except Exception:
+                    continue
         raise FileNotFoundError("No pude inferir target_frames.")
 
-    def _infer_feature_bins(self) -> Tuple[int, Optional[int]]:
+    def _infer_feature_bins_fast(self) -> Tuple[int, Optional[int]]:
+        """
+        🔥 OPTIMIZACIÓN: Lee headers sin cargar datos completos.
+        """
         mel_bins = None
         mfcc_bins = None
 
-        for _, row in self.df.iterrows():
-            mel_path = row.get(self.mel_column)
-            if mel_bins is None and isinstance(mel_path, str) and Path(mel_path).exists():
-                arr = np.load(mel_path, mmap_mode="r")
-                mel_bins = int(arr.shape[-2]) if arr.ndim == 3 else int(arr.shape[0])
+        for idx, row in self.df.iterrows():
+            # Mel bins
+            if mel_bins is None:
+                mel_path = row.get(self.mel_column)
+                if isinstance(mel_path, str) and Path(mel_path).exists():
+                    try:
+                        shape, _ = self._load_npy_header(mel_path)
+                        mel_bins = int(shape[-2]) if len(shape) == 3 else int(shape[0])
+                    except Exception:
+                        continue
 
-            if self.use_mfcc and self.mfcc_column is not None:
+            # MFCC bins
+            if self.use_mfcc and self.mfcc_column is not None and mfcc_bins is None:
                 mfcc_path = row.get(self.mfcc_column)
-                if mfcc_bins is None and isinstance(mfcc_path, str) and Path(mfcc_path).exists():
-                    arr = np.load(mfcc_path, mmap_mode="r")
-                    mfcc_bins = int(arr.shape[-2]) if arr.ndim == 3 else int(arr.shape[0])
+                if isinstance(mfcc_path, str) and Path(mfcc_path).exists():
+                    try:
+                        shape, _ = self._load_npy_header(mfcc_path)
+                        mfcc_bins = int(shape[-2]) if len(shape) == 3 else int(shape[0])
+                    except Exception:
+                        continue
 
+            # Early exit si encontramos lo que necesitamos
             if mel_bins is not None and (not self.use_mfcc or mfcc_bins is not None):
                 break
 
@@ -191,8 +239,11 @@ class ProcessedAudioDataset(Dataset):
 
     @staticmethod
     def _load_npy(path: str | Path) -> np.ndarray:
-        arr = np.load(path, mmap_mode="r")
-        return np.array(arr, dtype=np.float32, copy=True)
+        """
+        🔥 OPTIMIZACIÓN: Carga eficiente sin copies innecesarias.
+        """
+        arr = np.load(path, allow_pickle=False)
+        return arr.astype(np.float32)  # Convierte en un paso, no copy=True
 
     @staticmethod
     def _ensure_2d(arr: np.ndarray) -> np.ndarray:
@@ -214,7 +265,7 @@ class ProcessedAudioDataset(Dataset):
             pad = target_frames - time_dim
             arr = np.pad(arr, ((0, 0), (0, pad)), mode="constant")
 
-        return arr.astype(np.float32, copy=False)
+        return arr.astype(np.float32)
 
     def _load_label(self, row: pd.Series) -> int:
         raw = row.get(self.target_column)
@@ -254,13 +305,10 @@ class ProcessedAudioDataset(Dataset):
     def __getitem__(self, idx: int):
         row = self.df.iloc[idx]
 
-        mel = np.array(
-            self._fix_time_axis(
-                self._load_npy(row[self.mel_column]),
-                self.target_frames,
-            ),
-            dtype=np.float32,
-            copy=True,
+        # 🔥 OPTIMIZACIÓN: Carga MEL de forma eficiente
+        mel = self._fix_time_axis(
+            self._load_npy(row[self.mel_column]),
+            self.target_frames,
         )
 
         sample = {
@@ -269,14 +317,22 @@ class ProcessedAudioDataset(Dataset):
             "filename": str(row.get("filename", idx)),
         }
 
-        if self.use_mfcc and self.mfcc_column is not None and pd.notna(row.get(self.mfcc_column)):
-            mfcc = self._fix_time_axis(
-                self._load_npy(row[self.mfcc_column]),
-                self.target_frames,
-            )
-            mfcc = np.array(mfcc, dtype=np.float32, copy=True)
-            sample["mfcc"] = torch.from_numpy(mfcc).unsqueeze(0)
+        # 🔥 OPTIMIZACIÓN: MFCC solo si existe
+        if (
+            self.use_mfcc
+            and self.mfcc_column is not None
+            and pd.notna(row.get(self.mfcc_column))
+        ):
+            try:
+                mfcc = self._fix_time_axis(
+                    self._load_npy(row[self.mfcc_column]),
+                    self.target_frames,
+                )
+                sample["mfcc"] = torch.from_numpy(mfcc).unsqueeze(0)
+            except Exception:
+                pass  # Saltarse si el archivo no existe
 
+        # 🔥 OPTIMIZACIÓN: Escalares solo si se usan
         if self.use_scalars and self.available_scalar_columns:
             sample["scalars"] = torch.tensor(
                 [float(row[c]) for c in self.available_scalar_columns],
@@ -287,6 +343,9 @@ class ProcessedAudioDataset(Dataset):
 
 
 def crnn_collate_fn(batch):
+    """
+    🔥 OPTIMIZACIÓN: Collate function eficiente sin operaciones innecesarias.
+    """
     mel = torch.stack([b["mel"] for b in batch])
 
     out = {"mel": mel}

@@ -48,7 +48,7 @@ class PreprocessConfig:
     peak_target: float = 0.99
     augment: bool = False
 
-    save_waveform: bool = True
+    save_waveform: bool = False
     save_mel: bool = True
     save_mfcc: bool = True
 
@@ -620,7 +620,8 @@ def main():
     
   
     # Definimos los nombres de los archivos
-    csv_filenames = ["UrbanSound8k.csv","audioset.csv","ESC50.csv","zenodo.csv","Guns_DS.csv","VOICe.csv"]
+    # csv_filenames = ["UrbanSound8k.csv","audioset.csv","ESC50.csv","zenodo.csv","Guns_DS.csv","VOICe.csv","driver_safety.csv", "emergencysound.csv", "Enhanced_audio_of_accident.csv" ]
+    csv_filenames = ["dataset_final_resampled.csv"]
 
 
     # Mapeamos para agregar el raw_dir usando una list comprehension
