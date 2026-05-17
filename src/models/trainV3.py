@@ -18,9 +18,9 @@ from src.models.audio_dataset import ProcessedAudioDataset, crnn_collate_fn
 
 class CFG:
     batch_size = 32  # ⬇️ Reducido de 64 para evitar memory issues
-    lr = 3e-4
+    lr = 1e-4
     weight_decay = 1e-2
-    epochs = 2
+    epochs = 16
     num_workers = 4  # ⬇️ Reducido de 8 para evitar deadlocks
     use_mfcc = True
     use_scalars = False
@@ -31,6 +31,7 @@ class CFG:
 
     # 🔥 AJUSTES CRÍTICOS PARA AMD GPU
     checkpoint_dir = CHECKPOINT_DIR
+    chekckpoint="last"
     save_every = 2
     use_amp = False  # ⬇️ DESHABILITADO temporalmente para debugging
     prefetch_factor = 1  # ⬇️ Reducido de 2 para evitar overflow de memoria
@@ -39,18 +40,18 @@ class CFG:
     # 🎯 FOCUS CLASSES — clases problemáticas detectadas en la matriz de confusión.
     # Ejemplo: focus_classes = ["dog_bark", "car_horn", "siren"]
     # Dejar vacío para desactivar: focus_classes = []
-    focus_classes: list = []
+    focus_classes: list = ['explosion','fire']
 
     # Multiplicador de peso en la loss para las focus classes (>1 = más penalización)
-    focus_loss_weight: float = 3.0
+    focus_loss_weight: float = 1.8
 
     # Multiplicador de oversample en el dataloader para las focus classes (>1 = más muestras)
-    focus_oversample_factor: float = 2.0
+    focus_oversample_factor: float = 1.4
 
 
 def save_checkpoint(cfg, model, optimizer, epoch, history, best_acc, best_epoch):
     os.makedirs(cfg.checkpoint_dir, exist_ok=True)
-
+    
     path = os.path.join(cfg.checkpoint_dir, f"checkpoint_epoch_{epoch}.pt")
 
     torch.save({
