@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split, WeightedRandomSampler
 from torch.amp import autocast, GradScaler
-from src.models.hybrid_cnn import ImprovedMFCCCNN
+from src.models.hybrid_cnn_v2 import ImprovedMFCCCNN
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
 import glob
 from src.utils.config import PROCESSED_METADATA, LABEL_MAPPING, CHECKPOINT_DIR, FINAL_MODEL_DIR
@@ -20,14 +20,14 @@ class CFG:
     batch_size = 32  # ⬇️ Reducido de 64 para evitar memory issues
     lr = 3e-4
     weight_decay = 1e-2
-    epochs = 14
+    epochs = 2
     num_workers = 4  # ⬇️ Reducido de 8 para evitar deadlocks
     use_mfcc = True
     use_scalars = False
     seed = 42
     print_every = 50
     target_type = "human_label"
-    mode = "mel_only"
+    mode = "mel_mfcc"
 
     # 🔥 AJUSTES CRÍTICOS PARA AMD GPU
     checkpoint_dir = CHECKPOINT_DIR
@@ -39,7 +39,7 @@ class CFG:
     # 🎯 FOCUS CLASSES — clases problemáticas detectadas en la matriz de confusión.
     # Ejemplo: focus_classes = ["dog_bark", "car_horn", "siren"]
     # Dejar vacío para desactivar: focus_classes = []
-    focus_classes: list = ["explosion","fire"]
+    focus_classes: list = []
 
     # Multiplicador de peso en la loss para las focus classes (>1 = más penalización)
     focus_loss_weight: float = 3.0

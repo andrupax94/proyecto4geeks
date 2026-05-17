@@ -13,7 +13,6 @@ __pycache__/
 *.so
 
 # Build / packaging
-
 dist/
 site/
 .eggs/
