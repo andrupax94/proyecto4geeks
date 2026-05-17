@@ -64,3 +64,12 @@ MODELS_DIR = ROOT_DIR / "models"
 CHECKPOINT_DIR = MODELS_DIR / "checkpoints"
 HISTORY_DIR = MODELS_DIR / "history"
 FINAL_MODEL_DIR = MODELS_DIR / "final"
+
+# =========================
+# YOUTUBE EXPLOSIONS DATASET
+# =========================
+YOUTUBE_EXPLOSIONS_DIR = DATA_DIR / "youtube_explosions"
+
+YOUTUBE_RAW_DIR = YOUTUBE_EXPLOSIONS_DIR / "raw"
+YOUTUBE_PROCESSED_DIR = YOUTUBE_EXPLOSIONS_DIR / "explosion"
+YOUTUBE_URLS_FILE = YOUTUBE_EXPLOSIONS_DIR / "youtube_urls.txt"
