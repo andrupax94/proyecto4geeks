@@ -28,7 +28,6 @@ class CFG:
     print_every = 50
     target_type = "human_label"
     mode = "mel_only"
-
     # 🔥 AJUSTES CRÍTICOS PARA AMD GPU
     checkpoint_dir = CHECKPOINT_DIR
     save_every = 2
