@@ -20,7 +20,7 @@ class CFG:
     batch_size = 32  # ⬇️ Reducido de 64 para evitar memory issues
     lr = 3e-4
     weight_decay = 1e-2
-    epochs = 14
+    epochs = 12
     num_workers = 4  # ⬇️ Reducido de 8 para evitar deadlocks
     use_mfcc = True
     use_scalars = False
@@ -191,50 +191,51 @@ def build_focus_sampler(
 ) -> WeightedRandomSampler | None:
     """
     Crea un WeightedRandomSampler que oversamples las focus classes.
-    Soporta datasets directos, Subsets de random_split, y ProcessedAudioDataset
-    (extrae etiquetas desde el DataFrame sin iterar muestra a muestra).
+    ✅ MEJORADO: Extrae labels de múltiples formas:
+    1. Si dataset tiene atributo .labels
+    2. Si es un Subset, extrae de dataset.dataset.labels
+    3. Si no, ITERA el dataset para extraer labels de cada muestra
+    
+    dataset[i] devuelve (batch, label, filename)
     """
     if not focus_indices:
         return None
 
-    # Intentar extraer etiquetas de forma eficiente
+    labels = None
+    
+    # Estrategia 1: Dataset tiene atributo .labels
     if hasattr(dataset, "labels"):
-        # Dataset con atributo .labels explícito
         labels = list(dataset.labels)
-
-    elif hasattr(dataset, "dataset") and hasattr(dataset, "indices"):
-        # Subset de random_split — acceder al dataset subyacente
-        base_ds = dataset.dataset
-        indices = dataset.indices
-
-        if hasattr(base_ds, "labels"):
-            labels = [base_ds.labels[i] for i in indices]
-        elif hasattr(base_ds, "df") and hasattr(base_ds, "label_mapping"):
-            # ProcessedAudioDataset: extraer etiquetas desde el DataFrame
-            target_col = base_ds.target_column
-            label_mapping = base_ds.label_mapping
-
-            raw_labels = base_ds.df.iloc[indices][target_col].tolist()
-
-            # Normalizar a int usando el label_mapping
-            labels = []
-            for raw in raw_labels:
-                key = str(raw).strip() if raw is not None else raw
-                if key in label_mapping:
-                    labels.append(int(label_mapping[key]))
-                elif raw in label_mapping:
-                    labels.append(int(label_mapping[raw]))
+        print("   ✅ Labels extraídas de dataset.labels")
+    
+    # Estrategia 2: Es un Subset de random_split con .dataset.labels
+    elif hasattr(dataset, "dataset") and hasattr(dataset.dataset, "labels"):
+        labels = [dataset.dataset.labels[i] for i in dataset.indices]
+        print("   ✅ Labels extraídas de dataset.dataset.labels (Subset)")
+    
+    # Estrategia 3: ITERA el dataset para extraer labels
+    # Esto funciona porque dataset[i] devuelve (batch, label, filename)
+    elif len(dataset) > 0:
+        print("   ⏳ Extrayendo labels iterando dataset (esto puede tardar)...")
+        labels = []
+        for i in range(len(dataset)):
+            try:
+                _, label, _ = dataset[i]  # (batch, label, filename)
+                # label puede ser tensor o int
+                if hasattr(label, 'item'):
+                    labels.append(label.item())
                 else:
-                    try:
-                        labels.append(int(raw))
-                    except (ValueError, TypeError):
-                        labels.append(0)  # fallback seguro
-        else:
-            print("⚠️  No se pudo extraer etiquetas del Subset. Oversample desactivado.")
-            return None
-
+                    labels.append(int(label))
+            except Exception as e:
+                print(f"   ⚠️  Error extrayendo label en índice {i}: {e}")
+                return None
+        print(f"   ✅ {len(labels)} labels extraídas correctamente")
     else:
         print("⚠️  No se pudo extraer .labels del dataset. Oversample desactivado.")
+        return None
+
+    if labels is None or len(labels) == 0:
+        print("⚠️  No hay labels para procesar. Oversample desactivado.")
         return None
 
     focus_set = set(focus_indices)

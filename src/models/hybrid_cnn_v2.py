@@ -2,237 +2,133 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
+# Modos soportados
+# - "mel_only"  : solo espectrograma mel  (comportamiento original)
+# - "mfcc_only" : solo MFCC
+# - "mel_mfcc"  : ambos — los embeddings de 256-d se suman antes del clasificador
 
 
-# ============================================================
-# BUILDING BLOCK: Conv + BN + ReLU
-# ============================================================
-class ConvBNReLU(nn.Module):
-    """Conv2d → BatchNorm2d → ReLU. bias=False porque BN ya centra."""
-
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int = 3,
-        padding: int = 1,
-        stride: int = 1,
-    ):
-        super().__init__()
-        self.block = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size,
-                      padding=padding, stride=stride, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.block(x)
-
-
-# ============================================================
-# BUILDING BLOCK: Residual Block
-# ============================================================
-class ResBlock(nn.Module):
+def _make_cnn_backbone(dropout: float) -> nn.Sequential:
     """
-    Bloque residual ligero:
-        x → Conv-BN-ReLU → Conv-BN → (+x) → ReLU
-    Si los canales cambian, se proyecta con una conv 1×1.
+    Backbone CNN compartido (sin BatchNorm, compatible con AMD gfx1102).
+    Entrada:  [B, 1, F, T]
+    Salida:   [B, 256, F', T']  (antes del global pool)
     """
+    return nn.Sequential(
+        # Block 1 — 64 canales
+        nn.Conv2d(1, 64, kernel_size=3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(64, 64, kernel_size=3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.MaxPool2d(kernel_size=(2, 2)),
+        nn.Dropout2d(dropout * 0.8),
 
-    def __init__(self, channels: int, dropout: float = 0.1):
-        super().__init__()
-        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False)
-        self.bn1   = nn.BatchNorm2d(channels)
-        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False)
-        self.bn2   = nn.BatchNorm2d(channels)
-        self.drop  = nn.Dropout2d(dropout)
+        # Block 2 — 128 canales
+        nn.Conv2d(64, 128, kernel_size=3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(128, 128, kernel_size=3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.MaxPool2d(kernel_size=(2, 2)),
+        nn.Dropout2d(dropout * 0.8),
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        residual = x
-        out = F.relu(self.bn1(self.conv1(x)), inplace=True)
-        out = self.drop(out)
-        out = self.bn2(self.conv2(out))
-        return F.relu(out + residual, inplace=True)
+        # Block 3 — 256 canales
+        nn.Conv2d(128, 256, kernel_size=3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(256, 256, kernel_size=3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.MaxPool2d(kernel_size=(2, 2)),
+        nn.Dropout2d(dropout * 0.8),
+    )
 
 
-# ============================================================
-# SINGLE FEATURE BRANCH  (mel  ó  mfcc)
-# ============================================================
-class FeatureBranch(nn.Module):
+class ImprovedMFCCCNN(nn.Module):
     """
-    Encoder CNN para un único espectrograma [B, 1, F, T].
+    CNN optimizado para AMD RX 7600 XT (gfx1102).
 
-    Pooling asimétrico:
-      - (2, 2) en bloques iniciales para reducir F y T por igual.
-      - (1, 2) en bloques finales para conservar resolución de frecuencia.
+    Modos de entrada (argumento `mode`):
+        "mel_only"  — solo espectrograma mel       [B, 1, F_mel, T]
+        "mfcc_only" — solo coeficientes MFCC       [B, 1, F_mfcc, T]
+        "mel_mfcc"  — mel + MFCC (fusión por suma) [B, 1, F_mel, T]  +  [B, 1, F_mfcc, T]
 
-    Salida: [B, out_channels] tras Global Average Pooling.
-    """
+    En modo "mel_mfcc" el forward espera dos tensores:
+        logits = model(mel, mfcc)
 
-    def __init__(self, out_channels: int = 256, dropout: float = 0.2):
-        super().__init__()
+    En los otros modos espera uno:
+        logits = model(x)
 
-        # ── Stem ──────────────────────────────────────────
-        self.stem = nn.Sequential(
-            ConvBNReLU(1, 32, kernel_size=3, padding=1),
-            ConvBNReLU(32, 32, kernel_size=3, padding=1),
-            nn.MaxPool2d(kernel_size=(2, 2)),   # F/2, T/2
-            nn.Dropout2d(dropout * 0.5),
-        )
-
-        # ── Block 1 ───────────────────────────────────────
-        self.block1 = nn.Sequential(
-            ConvBNReLU(32, 64),
-            ResBlock(64, dropout=dropout * 0.5),
-            nn.MaxPool2d(kernel_size=(2, 2)),   # F/4, T/4
-            nn.Dropout2d(dropout),
-        )
-
-        # ── Block 2 ───────────────────────────────────────
-        self.block2 = nn.Sequential(
-            ConvBNReLU(64, 128),
-            ResBlock(128, dropout=dropout),
-            nn.MaxPool2d(kernel_size=(2, 2)),   # F/8, T/8
-            nn.Dropout2d(dropout),
-        )
-
-        # ── Block 3 ───────────────────────────────────────
-        self.block3 = nn.Sequential(
-            ConvBNReLU(128, out_channels),
-            ResBlock(out_channels, dropout=dropout),
-            nn.MaxPool2d(kernel_size=(1, 2)),   # conserva F, T/16
-            nn.Dropout2d(dropout),
-        )
-
-        self.gap = nn.AdaptiveAvgPool2d((1, 1))
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """x: [B, 1, F, T] → [B, out_channels]"""
-        x = self.stem(x)
-        x = self.block1(x)
-        x = self.block2(x)
-        x = self.block3(x)
-        x = self.gap(x)
-        return x.view(x.size(0), -1)
-
-
-# ============================================================
-# MULTI-BRANCH CNN  (mel + mfcc)
-# ============================================================
-class DualBranchCNN(nn.Module):
-    """
-    Arquitectura de dos ramas para clasificación de audio urbano.
-
-    Modos de operación
-    ------------------
-    - "mel_only"  : solo rama mel  (compatible con código anterior)
-    - "mel_mfcc"  : mel + mfcc, fusión por concatenación
-
-    La fusión ocurre antes del clasificador final, lo que permite
-    que cada rama aprenda representaciones especializadas.
-
-    Esquema (modo mel_mfcc):
-        Mel  → FeatureBranch → [B, branch_channels]  ──┐
-                                                         cat → [B, 2*branch_channels]
-        MFCC → FeatureBranch → [B, branch_channels]  ──┘
-                                   ↓
-                             Classifier → [B, num_classes]
+    Notas de diseño:
+        - SIN BatchNorm (causa miopenStatusUnknownError en gfx1102)
+        - LayerNorm en capas dense para estabilidad
+        - Fusión por suma: misma dimensión de embedding (256-d), sin parámetros extra,
+          gradientes fluyen por ambas ramas de forma independiente.
+        - Los dos backbones comparten arquitectura pero NO comparten pesos
+          (mel y MFCC tienen distribuciones muy distintas).
     """
 
     def __init__(
         self,
         num_classes: int,
-        mode: str = "mel_mfcc",      # "mel_only" | "mel_mfcc"
-        branch_channels: int = 256,
-        dropout: float = 0.3,
+        dropout: float = 0.25,
+        mode: str = "mel_only",
     ):
+        if mode not in ("mel_only", "mfcc_only", "mel_mfcc"):
+            raise ValueError(f"mode debe ser 'mel_only', 'mfcc_only' o 'mel_mfcc'. Recibido: {mode!r}")
+
         super().__init__()
-
-        if mode not in ("mel_only", "mel_mfcc"):
-            raise ValueError(f"mode debe ser 'mel_only' o 'mel_mfcc', recibido: {mode!r}")
-
         self.mode = mode
 
-        # ── Ramas ─────────────────────────────────────────
-        self.mel_branch = FeatureBranch(out_channels=branch_channels, dropout=dropout)
+        # ── Backbones ──────────────────────────────────────────────────────────
+        if mode in ("mel_only", "mel_mfcc"):
+            self.cnn_mel = _make_cnn_backbone(dropout)
 
-        if mode == "mel_mfcc":
-            self.mfcc_branch = FeatureBranch(out_channels=branch_channels, dropout=dropout)
-            fusion_dim = branch_channels * 2
-        else:
-            self.mfcc_branch = None
-            fusion_dim = branch_channels
+        if mode in ("mfcc_only", "mel_mfcc"):
+            self.cnn_mfcc = _make_cnn_backbone(dropout)
 
-        # ── Clasificador ──────────────────────────────────
-        # hidden_dim ligeramente reducido respecto a la fusión
-        hidden_dim = max(fusion_dim, 512)
+        # ── Global Average Pooling ─────────────────────────────────────────────
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
 
+        # ── Clasificador (LayerNorm, sin BatchNorm) ───────────────────────────
         self.classifier = nn.Sequential(
-            nn.Linear(fusion_dim, hidden_dim),
-            nn.BatchNorm1d(hidden_dim),
+            nn.Linear(256, 128),
+            nn.LayerNorm(128),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
-
-            nn.Linear(hidden_dim, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout),
-
-            nn.Linear(512, 256),
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout * 0.5),
-
-            nn.Linear(256, num_classes),
+            nn.Linear(128, num_classes),
         )
 
-    # ----------------------------------------------------------
+    def _embed(self, cnn: nn.Sequential, x: torch.Tensor) -> torch.Tensor:
+        """Pasa x por un backbone y devuelve el embedding [B, 256]."""
+        feat = cnn(x)                        # [B, 256, F', T']
+        feat = self.global_pool(feat)        # [B, 256, 1, 1]
+        return feat.view(feat.size(0), -1)   # [B, 256]
+
     def forward(self, mel: torch.Tensor, mfcc: torch.Tensor | None = None) -> torch.Tensor:
         """
         Parámetros
         ----------
-        mel  : [B, 1, F_mel, T]
-        mfcc : [B, 1, F_mfcc, T]  — requerido si mode == 'mel_mfcc'
+        mel  : [B, 1, F_mel, T]   — requerido siempre excepto en modo "mfcc_only"
+        mfcc : [B, 1, F_mfcc, T]  — requerido en modos "mfcc_only" y "mel_mfcc"
 
         Retorna
         -------
         logits : [B, num_classes]
         """
-        mel_feat = self.mel_branch(mel)       # [B, branch_channels]
+        if self.mode == "mel_only":
+            embedding = self._embed(self.cnn_mel, mel)
 
-        if self.mode == "mel_mfcc":
+        elif self.mode == "mfcc_only":
             if mfcc is None:
-                raise ValueError("Se esperaba 'mfcc' pero recibió None en modo 'mel_mfcc'.")
-            mfcc_feat = self.mfcc_branch(mfcc) # [B, branch_channels]
-            features = torch.cat([mel_feat, mfcc_feat], dim=1)  # [B, 2*branch_channels]
-        else:
-            features = mel_feat                # [B, branch_channels]
+                raise ValueError("mode='mfcc_only' requiere el tensor 'mfcc'.")
+            embedding = self._embed(self.cnn_mfcc, mfcc)
 
-        return self.classifier(features)       # [B, num_classes]
+        else:  # "mel_mfcc"
+            if mfcc is None:
+                raise ValueError("mode='mel_mfcc' requiere el tensor 'mfcc'.")
+            # Fusión por suma: misma dimensión, gradientes independientes por rama
+            embedding = self._embed(self.cnn_mel, mel) + self._embed(self.cnn_mfcc, mfcc)
 
-
-# ============================================================
-# ALIAS de compatibilidad  (drop-in replacement del modelo v1)
-# ============================================================
-class ImprovedMFCCCNN(DualBranchCNN):
-    """
-    Alias para mantener compatibilidad con trainV1.py.
-
-    En trainV1.py se instancia como:
-        model = ImprovedMFCCCNN(num_classes=num_classes, dropout=0.25)
-
-    Ahora DualBranchCNN acepta los mismos kwargs, por lo que
-    no hay que tocar el training loop.
-
-    Para activar la segunda rama, cambia en CFG:
-        mode = "mel_mfcc"     (en lugar de "mel_only")
-        use_mfcc = True
-    Y pasa mode al constructor si quieres sobrescribir el default.
-    """
-
-    def __init__(self, num_classes: int, dropout: float = 0.3, mode: str = "mel_mfcc"):
-        super().__init__(num_classes=num_classes, mode=mode, dropout=dropout)
+        return self.classifier(embedding)
 
 
 # ============================================================
@@ -240,27 +136,55 @@ class ImprovedMFCCCNN(DualBranchCNN):
 # ============================================================
 if __name__ == "__main__":
     import os
+    import time
 
     os.environ["MIOPEN_FIND_ENFORCE"] = "SEARCH_DB_ONLY"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device}\n")
+    NUM_CLASSES = 23
+    BATCH = 16
 
-    # ── Modo mel_only (backward compatible) ───────────────
-    model_single = ImprovedMFCCCNN(num_classes=206, dropout=0.3, mode="mel_only").to(device)
-    mel  = torch.randn(4, 1, 128, 256, device=device)  # [B, 1, mel_bins, T]
-    out  = model_single(mel)
-    out.mean().backward()
-    params = sum(p.numel() for p in model_single.parameters())
-    print(f"✅ mel_only  | output: {out.shape} | params: {params:,}")
+    for mode in ("mel_only", "mfcc_only", "mel_mfcc"):
+        print(f"\n{'=' * 60}")
+        print(f"🔧 Modo: {mode}")
 
-    # ── Modo mel_mfcc (dual branch) ────────────────────────
-    model_dual = ImprovedMFCCCNN(num_classes=206, dropout=0.3, mode="mel_mfcc").to(device)
-    mel  = torch.randn(4, 1, 128, 256, device=device)  # mel_bins = 128
-    mfcc = torch.randn(4, 1,  40, 256, device=device)  # mfcc_bins =  40
-    out  = model_dual(mel, mfcc)
-    out.mean().backward()
-    params = sum(p.numel() for p in model_dual.parameters())
-    print(f"✅ mel_mfcc  | output: {out.shape} | params: {params:,}")
+        model = ImprovedMFCCCNN(num_classes=NUM_CLASSES, dropout=0.25, mode=mode).to(device)
 
-    print("\n✅ Forward + Backward: OK")
+        total_params     = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print(f"   Total params    : {total_params:,}")
+        print(f"   Trainable params: {trainable_params:,}")
+
+        mel  = torch.randn(BATCH, 1, 128, 360, device=device)
+        mfcc = torch.randn(BATCH, 1,  40, 360, device=device)
+
+        optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
+        criterion = torch.nn.CrossEntropyLoss()
+        model.train()
+
+        times = []
+        for i in range(5):
+            t0 = time.time()
+
+            if mode == "mel_only":
+                out = model(mel)
+            elif mode == "mfcc_only":
+                out = model(mel, mfcc)   # mel ignorado internamente
+            else:
+                out = model(mel, mfcc)
+
+            labels = torch.randint(0, NUM_CLASSES, (BATCH,), device=device)
+            loss = criterion(out, labels)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            dt = time.time() - t0
+            times.append(dt)
+            print(f"   iter {i+1}: {dt*1000:.1f}ms  ({BATCH/dt:.0f} img/s)")
+
+        avg = sum(times) / len(times)
+        print(f"   ⚡ Promedio: {avg*1000:.1f}ms/batch  |  {BATCH/avg:.0f} img/s")
+
+    print(f"\n{'=' * 60}")
+    print("✅ Todos los modos OK")
