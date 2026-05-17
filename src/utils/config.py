@@ -16,6 +16,9 @@ RAW_DIR = DATA_DIR / "raw"
 INTERIM_DIR = DATA_DIR / "interim"
 PROCESSED_DIR = DATA_DIR / "processed"
 
+SRC_DIR = ROOT_DIR / "src" 
+BUILD_DIR = SRC_DIR / "data" / "build"
+
 # ===============================
 # BUILD DATA
 # ===============================
