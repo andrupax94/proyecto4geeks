@@ -58,6 +58,7 @@ Thumbs.db
 # =========================
 *.log
 *.zip
+*.7z
 
 # =========================
 # Audio datasets
@@ -101,3 +102,4 @@ proyecto4geeks.egg-info/
 # Optional generated configs
 # =========================
 settings.json
+notebooks/VOICe/VOICe_snr_-3dB.7z
