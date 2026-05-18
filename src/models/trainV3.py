@@ -18,15 +18,15 @@ from src.models.audio_dataset import ProcessedAudioDataset, crnn_collate_fn
 
 class CFG:
     batch_size = 32  # ⬇️ Reducido de 64 para evitar memory issues
-    lr = 1e-5 # 3e-4, 1e-4, 1e-5
+    lr = 1e-5# 3e-4, 1e-4, 1e-5
     weight_decay = 1e-2
-    epochs = 26
+    epochs = 18
     num_workers = 4  # ⬇️ Reducido de 8 para evitar deadlocks
     use_mfcc = True
     use_scalars = False
     seed = 42
     print_every = 50
-    target_type = "human_label"
+    target_type = "alertable"
     mode = "mel_mfcc"
 
     # 🔥 AJUSTES CRÍTICOS PARA AMD GPU
@@ -43,10 +43,10 @@ class CFG:
     focus_classes: list = []
 
     # Multiplicador de peso en la loss para las focus classes (>1 = más penalización)
-    focus_loss_weight: float = 1.6
+    focus_loss_weight: float = 2
 
     # Multiplicador de oversample en el dataloader para las focus classes (>1 = más muestras)
-    focus_oversample_factor: float = 1.2
+    focus_oversample_factor: float = 1.5
 
 
 def save_checkpoint(cfg, model, optimizer, epoch, history, best_acc, best_epoch):
@@ -658,10 +658,13 @@ def main():
         focus_weight=cfg.focus_loss_weight,
         device=device,
     )
-
+    if cfg.target_type == "alertable":
+        label_smoothing = 0.0
+    else: 
+        label_smoothing = 0.05
     criterion = nn.CrossEntropyLoss(
         weight=focus_class_weights,   # None si no hay focus classes (comportamiento original)
-        label_smoothing=0.05
+        label_smoothing=label_smoothing
     )
 
     # =====================================================
