@@ -1,7 +1,7 @@
-filename,prediction,confidence,prob_alert_sirem,prob_traffic,prob_weather,prob_instrument,prob_fight,prob_explosion,prob_gun_shot,prob_construction_noise,prob_domestic_activity,prob_car_crash,prob_dog,prob_breathing,prob_voice,prob_another_animal,prob_engine,prob_fire,prob_glass_metal
-11325622-police-siren-sound-effect-240674.mp3,alert_sirem,0.913749098777771,0.9137,0.0262,0.013,0.0085,0.0066,,,,,,,,,,,,
-audio_607a0.mp3,explosion,0.5154159069061279,,,,,,0.5154,0.3114,0.0453,0.0176,0.0157,,,,,,,
-dragon-studio-dog-barking-406629.mp3,dog,0.9861888289451599,,,0.0008,,,,,,,,0.9862,0.0031,0.0016,0.0011,,,
-freesound_community-dog-barking-70772.mp3,dog,0.9895663261413574,,,0.0012,,,,,,,,0.9896,0.0009,0.0015,0.0013,,,
-freesound_community-m4-assault-rifle-long-burst-102682.mp3,another_animal,0.181063711643219,,,,,,0.1382,,,,,,,,0.1811,0.1772,0.1339,0.1232
-m4a1_unsil-1_d6515.mp3,explosion,0.8426465392112732,,,0.003,,,0.8426,0.1286,,,,,,,0.0055,,0.0026,
+filename,prediction,confidence,prob_alert_sirem,prob_instrument,prob_traffic,prob_fight,prob_domestic_activity,prob_explosion,prob_gun_shot,prob_water,prob_breathing,prob_dog,prob_another_animal,prob_crying,prob_weather,prob_engine,prob_fire,prob_machine,prob_glass_metal
+11325622-police-siren-sound-effect-240674.mp3,alert_sirem,0.9647247791290283,0.9647,0.0089,0.0059,0.0027,0.0023,,,,,,,,,,,,
+audio_607a0.mp3,explosion,0.2530989348888397,,0.0944,,,,0.2531,0.1635,0.097,0.0859,,,,,,,,
+dragon-studio-dog-barking-406629.mp3,dog,0.9887563586235046,,0.0009,,,,,,,0.0016,0.9888,0.001,0.0009,,,,,
+freesound_community-dog-barking-70772.mp3,dog,0.9896921515464783,,,,,,,,,0.0012,0.9897,0.0011,0.0007,0.0011,,,,
+freesound_community-m4-assault-rifle-long-burst-102682.mp3,engine,0.4944458305835724,,,,,,0.0759,,,,,0.0565,,,0.4944,0.1241,0.0776,
+m4a1_unsil-1_d6515.mp3,gun_shot,0.21596069633960724,,,,,,0.204,0.216,0.1015,,,,,,,,0.1062,0.1004
