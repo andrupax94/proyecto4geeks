@@ -5,6 +5,8 @@ from src.utils.config import (
 )
 
 import subprocess
+import sys
+import time
 
 YOUTUBE_RAW_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -18,12 +20,19 @@ for url in urls:
     print(f"\nDescargando -> {url}")
 
     cmd = [
-        "yt-dlp",
+        sys.executable, "-m", "yt_dlp",
+        "-f", "bestaudio/best",
         "-x",
         "--audio-format", "wav",
 
         # SOLO primeros 30 minutos
-        "--download-sections", "*00:00:00-00:30:00",
+        "--download-sections", "*00:00:00-00:45:00",
+        "--concurrent-fragments", "1",
+        "--retries", "10",
+        "--fragment-retries", "10",
+        "--socket-timeout", "30",
+
+        "--force-ipv4",
 
         "-o",
         str(YOUTUBE_RAW_DIR / "%(id)s.%(ext)s"),
@@ -32,3 +41,4 @@ for url in urls:
     ]
 
     subprocess.run(cmd)
+    time.sleep(2)
