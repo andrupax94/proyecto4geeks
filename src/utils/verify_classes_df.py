@@ -13,9 +13,9 @@ def obtener_human_labels_env_vacio(ruta_csv, n_muestra=20):
 
     # Condiciones de "env vacío"
     condiciones = (
-        (df["env"].isna()) |
-        (df["env"] == "") |
-        (df["env"] == "nan")
+        (df["alertable"].isna()) |
+        (df["alertable"] == "") |
+        (df["alertable"] == "nan")
     )
 
     # Filtrar
@@ -30,7 +30,7 @@ def obtener_human_labels_env_vacio(ruta_csv, n_muestra=20):
 
 # Ejemplo de uso:
 if __name__ == "__main__":
-    ruta = RAW_DIR / "driver_safety.csv" 
+    ruta = RAW_DIR / "dataset_finalV2.csv" 
     muestra = obtener_human_labels_env_vacio(ruta)
     print("Muestra de human_label con env vacío o indefinido:")
     print(muestra)

@@ -13,24 +13,25 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support, con
 import glob
 from src.utils.config import PROCESSED_METADATA, LABEL_MAPPING, CHECKPOINT_DIR, FINAL_MODEL_DIR
 from src.models.audio_dataset import ProcessedAudioDataset, crnn_collate_fn
-
+import collections
 
 
 class CFG:
     batch_size = 32  # ⬇️ Reducido de 64 para evitar memory issues
-    lr = 1e-5# 3e-4, 1e-4, 1e-5
-    weight_decay = 1e-2
-    epochs = 18
+    lr = 1e-4# 3e-4, 1e-4, 1e-5
+    weight_decay = 1e-3
+    epochs = 20
     num_workers = 4  # ⬇️ Reducido de 8 para evitar deadlocks
     use_mfcc = True
     use_scalars = False
     seed = 42
     print_every = 50
     target_type = "alertable"
-    mode = "mel_mfcc"
-
+    mode = "mel_only"
+    label_version = 2
+    version = 2
     # 🔥 AJUSTES CRÍTICOS PARA AMD GPU
-    checkpoint_dir = CHECKPOINT_DIR
+    checkpoint_dir = CHECKPOINT_DIR / f"{target_type}_V{version}"
     
     save_every = 2
     use_amp = False  # ⬇️ DESHABILITADO temporalmente para debugging
@@ -321,10 +322,15 @@ def build_loaders(cfg: CFG):
     # Elegir mapping automáticamente
     # =====================================================
     if cfg.target_type == "human_label":
-        label_mapping_path = LABEL_MAPPING["human_label"]
+        label_mapping_path = LABEL_MAPPING[f"human_label{cfg.label_version}"]
 
     elif cfg.target_type == "alertable":
-        label_mapping_path = LABEL_MAPPING["alertable"]
+        label_mapping_path = LABEL_MAPPING[f"alertable{cfg.label_version}"]
+        
+    elif cfg.target_type == "emergency":
+        label_mapping_path = LABEL_MAPPING[f"emergency{cfg.label_version}"]
+    elif cfg.target_type == "total":
+        label_mapping_path = LABEL_MAPPING[f"total{cfg.label_version}"]
 
     else:
         raise ValueError(
@@ -339,7 +345,7 @@ def build_loaders(cfg: CFG):
     # =====================================================
     print("📦 Cargando dataset de entrenamiento...")
     train_ds = ProcessedAudioDataset(
-        metadata_csv=PROCESSED_METADATA,
+        metadata_csv=PROCESSED_METADATA[str(cfg.label_version)],
         label_mapping_path=label_mapping_path,
         split="train",
         target_column=cfg.target_type,
@@ -353,7 +359,7 @@ def build_loaders(cfg: CFG):
     # =====================================================
     print("📦 Cargando dataset de test...")
     test_ds = ProcessedAudioDataset(
-        metadata_csv=PROCESSED_METADATA,
+        metadata_csv=PROCESSED_METADATA[str(cfg.label_version)],
         label_mapping_path=label_mapping_path,
         split="test",
         target_column=cfg.target_type,
@@ -391,8 +397,11 @@ def build_loaders(cfg: CFG):
         persistent_workers=cfg.persistent_workers,
         timeout=0,
     )
-
+    train_labels = collections.Counter(train_ds.df[cfg.target_type].tolist())
+    test_labels  = collections.Counter(test_ds.df[cfg.target_type].tolist())
     print(f"✅ Dataloaders creados correctamente")
+    print(f"Proporciones Train:{train_labels}")
+    print(f"Proporciones Test:{test_labels}")
     return train_ds, test_ds, train_loader, test_loader
 
 
@@ -530,7 +539,7 @@ def main():
 
     print("=" * 70)
     print(f"🚀 Device: {device}")
-    print(f"📦 Metadata: {PROCESSED_METADATA}")
+    print(f"📦 Metadata: {PROCESSED_METADATA[str(cfg.label_version)]}")
     print(f"🎵 Modelo: ImprovedMFCCCNN")
     print(f"🔥 num_workers: {cfg.num_workers}")
     print(f"🔥 batch_size: {cfg.batch_size}")
@@ -637,6 +646,7 @@ def main():
     model = ImprovedMFCCCNN(
         num_classes=num_classes,
         dropout=0.25,
+        mode=cfg.mode
     ).to(device)
 
     total_params = sum(p.numel() for p in model.parameters())
@@ -662,6 +672,7 @@ def main():
         label_smoothing = 0.0
     else: 
         label_smoothing = 0.05
+    
     criterion = nn.CrossEntropyLoss(
         weight=focus_class_weights,   # None si no hay focus classes (comportamiento original)
         label_smoothing=label_smoothing
@@ -880,6 +891,7 @@ def main():
     best_model = ImprovedMFCCCNN(
         num_classes=num_classes,
         dropout=0.25,
+        mode=cfg.mode
     ).to(device)
 
     best_model.load_state_dict(

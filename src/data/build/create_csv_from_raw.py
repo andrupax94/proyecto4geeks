@@ -33,8 +33,8 @@ class Create_csv_from_raw:
         dataset_name="zenodo",
         split="train",
         nocsv=False,
-        ruta_csv_sinonimos=BUILD_DIR / "sinonimosV4.csv",
-        ruta_csv_alert_env=BUILD_DIR / "canonical_clasesV2.csv",
+        ruta_csv_sinonimos=BUILD_DIR / "sinonimosV5.csv",
+        ruta_csv_alert_env=BUILD_DIR / "canonical_clasesV3.csv",
     ):
         """
         Genera un CSV de audio en dos modos:

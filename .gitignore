@@ -103,3 +103,4 @@ proyecto4geeks.egg-info/
 # =========================
 settings.json
 notebooks/VOICe/VOICe_snr_-3dB.7z
+data/interim/processed_dataset/processed_metadataV2.csv

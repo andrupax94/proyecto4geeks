@@ -1,36 +1,23 @@
-"""
-Preprocesado incremental de audio.
-
-Cambios respecto al script original:
-- Acepta una lista de CSVs en lugar de un único CSV.
-- Usa dataset_source + human_label para organizar la salida:
-  processed_dataset/<dataset_source>/<human_label>/<audio_stem>/
-- Si los espectrogramas ya existen, no recalcula ese audio.
-- Si el CSV final ya existe, elimina las filas del dataset_source que se esté procesando
-  y añade las nuevas filas sin borrar el resto del histórico.
-- Guarda features en .npy.
-"""
-
 from __future__ import annotations
-import soundfile as sf
+
 import re
 import warnings
+import pickle
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
-from pathlib import Path, PureWindowsPath
-import re
-from typing import Any
 
 import numpy as np
 import pandas as pd
+import soundfile as sf
 import torch
 import torch.nn.functional as F
 import torchaudio
 import torchaudio.transforms as T
 from tqdm import tqdm
-import pickle
-from src.utils.config import RAW_DIR,INTERIM_DIR
+
+from src.utils.config import RAW_DIR, INTERIM_DIR
+
 warnings.filterwarnings("ignore")
 
 PathLike = Union[str, Path]
@@ -38,26 +25,38 @@ PathLike = Union[str, Path]
 
 @dataclass
 class PreprocessConfig:
-    sample_rate: int = 22050
-    n_mels: int = 128
-    n_mfcc: int = 40
-    n_fft: int = 2048
-    hop_length: int = 512
+    # Estandarización de audio
+    sample_rate: int = 44100
     target_duration: Optional[float] = 5.0
     normalize_peak: bool = True
     peak_target: float = 0.99
     augment: bool = False
 
+    # Formato de salida estandarizado
+    save_audio: bool = True
+    output_audio_filename: str = "audio_standardized.wav"
+    output_audio_format: str = "WAV"
+    output_audio_subtype: str = "PCM_16"
+
+    # Features
+    n_mels: int = 128
+    n_mfcc: int = 13
+    n_fft: int = 2048
+    hop_length: int = 512
+
     save_waveform: bool = False
     save_mel: bool = True
     save_mfcc: bool = True
 
-   
+    # Salida
     output_subdir: str = "processed_dataset"
-    metadata_filename: str = "processed_metadata.csv"
+    metadata_filename: str = "processed_metadataV2.csv"
 
-    label_mapping_human_filename: str = "label_mapping_human_label.pkl"
-    label_mapping_alertable_filename: str = "label_mapping_alertable.pkl"
+    label_mapping_human_filename: str = "label_mapping_human_labelV2.pkl"
+    label_mapping_alertable_filename: str = "label_mapping_alertableV2.pkl"
+    label_mapping_emergency_filename: str = "label_mapping_emergencyV2.pkl"
+    label_mapping_total: str = "label_mapping_totalV2.pkl"
+    label_mapping_human_no_alertable_filename: str = "label_mapping_human_no_alertableV2.pkl"
 
     file_path_candidates: Sequence[str] = ("file_path", "path", "filepath", "audio_path", "filename", "audio")
     label_candidates: Sequence[str] = ("human_label", "human_labels", "label", "keywords", "class", "target", "category")
@@ -77,7 +76,6 @@ class Preprocess:
         config: Optional[PreprocessConfig] = None,
         device: Optional[str] = None,
     ) -> None:
-       
         self.config = config or PreprocessConfig()
         self.csv_paths = [Path(p) for p in csv_paths] if csv_paths is not None else []
         self.raw_dir = Path(raw_dir) if raw_dir is not None else None
@@ -92,8 +90,12 @@ class Preprocess:
 
         self.output_dir = self._resolve_output_dir()
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
         self.label_mapping_human_path = self.output_dir / self.config.label_mapping_human_filename
         self.label_mapping_alertable_path = self.output_dir / self.config.label_mapping_alertable_filename
+        self.label_mapping_emergency_path = self.output_dir / self.config.label_mapping_emergency_filename
+        self.label_mapping_total_path = self.output_dir / self.config.label_mapping_total
+        self.label_mapping_human_no_alertable_path = self.output_dir / self.config.label_mapping_human_no_alertable_filename
         self.metadata_path = self.output_dir / self.config.metadata_filename
 
         self._resampler_cache: Dict[int, torchaudio.transforms.Resample] = {}
@@ -106,7 +108,9 @@ class Preprocess:
             n_mels=self.config.n_mels,
             power=2.0,
         ).to(self.device)
+
         self.amplitude_to_db = T.AmplitudeToDB(stype="power").to(self.device)
+
         self.mfcc_transform = T.MFCC(
             sample_rate=self.config.sample_rate,
             n_mfcc=self.config.n_mfcc,
@@ -118,11 +122,11 @@ class Preprocess:
                 "power": 2.0,
             },
         ).to(self.device)
+
     def _save_pickle(self, obj: Any, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("wb") as f:
             pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
-
 
     @staticmethod
     def _normalize_alertable_value(value: Any) -> Optional[bool]:
@@ -143,7 +147,6 @@ class Preprocess:
 
         return None
 
-
     def _build_label_mapping(self, df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         if target_col not in df.columns:
             raise ValueError(f"No existe la columna '{target_col}' en el dataframe.")
@@ -160,7 +163,6 @@ class Preprocess:
             unique_values = sorted(set(values))
             label2idx = {bool(v): i for i, v in enumerate(unique_values)}
             idx2label = {i: bool(v) for v, i in label2idx.items()}
-
         else:
             values = [str(v).strip() for v in series.tolist() if str(v).strip()]
             unique_values = sorted(set(values), key=lambda x: x.lower())
@@ -174,22 +176,50 @@ class Preprocess:
             "num_classes": len(label2idx),
         }
 
-
     def _generate_label_mappings(self, df: pd.DataFrame) -> None:
-        # Mapeo para human_label
         if "human_label" in df.columns:
-            human_map = self._build_label_mapping(df, "human_label")
-            self._save_pickle(human_map, self.label_mapping_human_path)
-            print(f"🧩 Label mapping guardado: {self.label_mapping_human_path}")
+            total_map = self._build_label_mapping(df, "human_label")
+            self._save_pickle(total_map, self.label_mapping_total_path)
+            print(f"🧩 Label mapping guardado (total): {self.label_mapping_total_path}")
 
-        # Mapeo para alertable
+        if "human_label" in df.columns and "alertable" in df.columns:
+            alertable_mask = df["alertable"].apply(self._normalize_alertable_value) == True  # noqa: E712
+            df_alertable = df[alertable_mask]
+            if not df_alertable.empty:
+                human_map = self._build_label_mapping(df_alertable, "human_label")
+            else:
+                human_map = {"target_col": "human_label", "label2idx": {}, "idx2label": {}, "num_classes": 0}
+            self._save_pickle(human_map, self.label_mapping_human_path)
+            print(f"🧩 Label mapping guardado (human alertable): {self.label_mapping_human_path}")
+
         if "alertable" in df.columns:
             alert_map = self._build_label_mapping(df, "alertable")
             self._save_pickle(alert_map, self.label_mapping_alertable_path)
-            print(f"🧩 Label mapping guardado: {self.label_mapping_alertable_path}")
-    # ---------------------------
-    # Resolución de rutas/columnas
-    # ---------------------------
+            print(f"🧩 Label mapping guardado (alertable): {self.label_mapping_alertable_path}")
+
+        if "human_label" in df.columns and "alertable" in df.columns and "emergency" in df.columns:
+            alertable_mask = df["alertable"].apply(self._normalize_alertable_value) == True  # noqa: E712
+            emergency_mask = df["emergency"].apply(self._normalize_alertable_value) == True  # noqa: E712
+            df_emergency = df[alertable_mask & emergency_mask]
+            if not df_emergency.empty:
+                emergency_map = self._build_label_mapping(df_emergency, "human_label")
+            else:
+                emergency_map = {"target_col": "human_label", "label2idx": {}, "idx2label": {}, "num_classes": 0}
+            self._save_pickle(emergency_map, self.label_mapping_emergency_path)
+            print(f"🧩 Label mapping guardado (emergency): {self.label_mapping_emergency_path}")
+        elif "human_label" in df.columns and "emergency" not in df.columns:
+            print("⚠️  Columna 'emergency' no encontrada; label_mapping_emergency no generado.")
+
+        if "human_label" in df.columns and "alertable" in df.columns:
+            no_alertable_mask = df["alertable"].apply(self._normalize_alertable_value) == False  # noqa: E712
+            df_no_alertable = df[no_alertable_mask]
+            if not df_no_alertable.empty:
+                no_alertable_map = self._build_label_mapping(df_no_alertable, "human_label")
+            else:
+                no_alertable_map = {"target_col": "human_label", "label2idx": {}, "idx2label": {}, "num_classes": 0}
+            self._save_pickle(no_alertable_map, self.label_mapping_human_no_alertable_path)
+            print(f"🧩 Label mapping guardado (human no alertable): {self.label_mapping_human_no_alertable_path}")
+
     def _resolve_output_dir(self) -> Path:
         base = self.interim_dir if self.interim_dir is not None else Path(".")
         return base / self.config.output_subdir
@@ -236,101 +266,53 @@ class Preprocess:
         }
 
     def _normalize_path_text(self, value: Any) -> str:
-        """
-        Normaliza rutas provenientes de CSVs Windows/Linux.
-        """
         s = str(value).strip().strip('"').strip("'")
-
-        # Windows -> Linux compatible
         s = s.replace("\\", "/")
-
-        # Limpia barras duplicadas
         s = re.sub(r"/+", "/", s)
-
         return s
 
-
     def _audio_path_from_row(self, row: pd.Series, path_col: str) -> Path:
-        """
-        Resuelve rutas de audio de forma robusta para:
-        - Linux
-        - Windows
-        - rutas relativas
-        - rutas absolutas
-        - CSVs mezclados
-        """
-
         raw_value = row[path_col]
         normalized = self._normalize_path_text(raw_value)
 
         candidate = Path(normalized)
 
-        # ---------------------------------------------------
-        # 1) Ruta absoluta existente
-        # ---------------------------------------------------
         if candidate.is_absolute() and candidate.exists():
             return candidate.resolve()
 
-        # ---------------------------------------------------
-        # 2) Existe relativa al cwd
-        # ---------------------------------------------------
         if candidate.exists():
             return candidate.resolve()
 
-        # ---------------------------------------------------
-        # 3) Resolver usando raw_dir
-        # ---------------------------------------------------
         if self.raw_dir is not None:
-
             raw_dir = Path(self.raw_dir)
 
-            # Caso típico:
-            # sonidos/music/file.wav
             p1 = raw_dir / candidate
             if p1.exists():
                 return p1.resolve()
 
-            # ---------------------------------------------------
-            # 4) Si el CSV ya contiene ".../data/raw/..."
-            # recortar desde el nombre de raw_dir
-            # ---------------------------------------------------
             candidate_parts = list(candidate.parts)
-
             raw_name = raw_dir.name.lower()
 
             for idx, part in enumerate(candidate_parts):
                 if part.lower() == raw_name:
-                    trimmed = Path(*candidate_parts[idx + 1:])
+                    trimmed = Path(*candidate_parts[idx + 1 :])
                     p2 = raw_dir / trimmed
-
                     if p2.exists():
                         return p2.resolve()
 
-            # ---------------------------------------------------
-            # 5) Intentar solo por nombre de archivo
-            # ---------------------------------------------------
             p3 = raw_dir / candidate.name
-
             if p3.exists():
                 return p3.resolve()
 
-            # ---------------------------------------------------
-            # 6) Búsqueda recursiva (más lenta)
-            # útil para datasets inconsistentes
-            # ---------------------------------------------------
             try:
                 matches = list(raw_dir.rglob(candidate.name))
-
                 if matches:
                     return matches[0].resolve()
-
             except Exception:
                 pass
 
-        # ---------------------------------------------------
-        # 7) Fallback final
-        # ---------------------------------------------------
         return candidate
+
     def _get_resampler(self, orig_sr: int) -> Optional[torchaudio.transforms.Resample]:
         if orig_sr == self.config.sample_rate:
             return None
@@ -390,45 +372,69 @@ class Preprocess:
         np.save(out, tensor.detach().cpu().numpy())
         return str(out)
 
-    def _compute_scalar_features(self, waveform: torch.Tensor) -> Dict[str, float]:
-        eps = 1e-10
-        x = waveform.squeeze(0)
+    def _save_standardized_audio(self, waveform: torch.Tensor, path_without_suffix: Path) -> str:
+        out = path_without_suffix.with_suffix(".wav")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        audio_np = waveform.squeeze(0).detach().cpu().numpy().astype(np.float32)
+        sf.write(
+            str(out),
+            audio_np,
+            self.config.sample_rate,
+            subtype=self.config.output_audio_subtype,
+            format=self.config.output_audio_format,
+        )
+        return str(out)
 
-        rms = torch.sqrt(torch.mean(x ** 2)).item()
-        zcr = ((x[:-1] * x[1:]) < 0).float().mean().item() if x.numel() > 1 else 0.0
-
-        window = self._get_window(self.config.n_fft)
-        spec = torch.stft(
-            waveform,
-            n_fft=self.config.n_fft,
-            hop_length=self.config.hop_length,
-            win_length=self.config.n_fft,
-            window=window,
-            center=True,
-            return_complex=True,
-        ).abs().squeeze(0)
-
-        mag_mean = spec.mean(dim=-1)
-        freqs = torch.linspace(0.0, float(self.config.sample_rate) / 2.0, mag_mean.shape[0], device=mag_mean.device)
-
-        mag_sum = mag_mean.sum().clamp_min(eps)
-        centroid = (freqs * mag_mean).sum() / mag_sum
-        bandwidth = torch.sqrt((((freqs - centroid) ** 2) * mag_mean).sum() / mag_sum)
-
-        cumulative = torch.cumsum(mag_mean, dim=0)
-        threshold = 0.85 * mag_sum
-        rolloff_idx = torch.searchsorted(cumulative, threshold).clamp(max=mag_mean.shape[0] - 1)
-        rolloff = freqs[rolloff_idx]
-        flatness = torch.exp(torch.mean(torch.log(mag_mean.clamp_min(eps)))) / mag_mean.mean().clamp_min(eps)
-
-        return {
-            "rms": float(rms),
-            "zcr": float(zcr),
-            "spectral_centroid": float(centroid.item()),
-            "spectral_bandwidth": float(bandwidth.item()),
-            "spectral_rolloff": float(rolloff.item()),
-            "spectral_flatness": float(flatness.item()),
+    @staticmethod
+    def _subtype_to_bits_per_sample(subtype: Optional[str]) -> Optional[int]:
+        if not subtype:
+            return None
+        subtype = str(subtype).upper()
+        mapping = {
+            "PCM_U8": 8,
+            "PCM_16": 16,
+            "PCM_24": 24,
+            "PCM_32": 32,
+            "FLOAT": 32,
+            "DOUBLE": 64,
+            "ULAW": 8,
+            "ALAW": 8,
         }
+        return mapping.get(subtype)
+
+    @staticmethod
+    def _estimate_bitrate_kbps(sample_rate: Optional[int], channels: Optional[int], bits_per_sample: Optional[int]) -> Optional[float]:
+        if sample_rate is None or channels is None or bits_per_sample is None:
+            return None
+        return (float(sample_rate) * float(channels) * float(bits_per_sample)) / 1000.0
+
+    def _read_audio_info(self, audio_path: Path) -> Dict[str, Any]:
+        info: Dict[str, Any] = {
+            "original_sample_rate": None,
+            "original_channels": None,
+            "original_frames": None,
+            "original_duration_sec": None,
+            "original_subtype": None,
+            "original_bit_depth": None,
+            "original_bitrate_kbps": None,
+        }
+        try:
+            audio_info = sf.info(str(audio_path))
+            info["original_sample_rate"] = int(audio_info.samplerate) if audio_info.samplerate else None
+            info["original_channels"] = int(audio_info.channels) if audio_info.channels else None
+            info["original_frames"] = int(audio_info.frames) if audio_info.frames else None
+            if audio_info.samplerate and audio_info.frames:
+                info["original_duration_sec"] = float(audio_info.frames / audio_info.samplerate)
+            info["original_subtype"] = getattr(audio_info, "subtype", None)
+            info["original_bit_depth"] = self._subtype_to_bits_per_sample(info["original_subtype"])
+            info["original_bitrate_kbps"] = self._estimate_bitrate_kbps(
+                info["original_sample_rate"],
+                info["original_channels"],
+                info["original_bit_depth"],
+            )
+        except Exception:
+            pass
+        return info
 
     def _output_base(self, dataset_source: str, human_label: str, audio_stem: str) -> Path:
         return (
@@ -440,6 +446,7 @@ class Preprocess:
 
     def _existing_outputs(self, base: Path) -> Dict[str, Path]:
         return {
+            "audio": base / self.config.output_audio_filename,
             "waveform": base / "waveform.npy",
             "mel": base / "mel.npy",
             "mfcc": base / "mfcc.npy",
@@ -448,6 +455,8 @@ class Preprocess:
     def _outputs_exist(self, base: Path) -> bool:
         outs = self._existing_outputs(base)
         checks = []
+        if self.config.save_audio:
+            checks.append(outs["audio"].exists())
         if self.config.save_waveform:
             checks.append(outs["waveform"].exists())
         if self.config.save_mel:
@@ -456,9 +465,6 @@ class Preprocess:
             checks.append(outs["mfcc"].exists())
         return bool(checks) and all(checks)
 
-    # ---------------------------
-    # Procesamiento
-    # ---------------------------
     def process_single_audio(self, row: pd.Series, cols: Dict[str, str]) -> Optional[Dict[str, Any]]:
         try:
             audio_path = self._audio_path_from_row(row, cols["path"])
@@ -476,6 +482,22 @@ class Preprocess:
             result["resolved_audio_path"] = str(audio_path)
             result["output_base_dir"] = str(base_dir)
 
+            audio_info = self._read_audio_info(audio_path)
+            result.update(audio_info)
+
+            target_channels = 1
+            target_sample_rate = self.config.sample_rate
+            target_bit_depth = self._subtype_to_bits_per_sample(self.config.output_audio_subtype)
+            target_bitrate_kbps = self._estimate_bitrate_kbps(target_sample_rate, target_channels, target_bit_depth)
+
+            result.update({
+                "final_sample_rate": target_sample_rate,
+                "final_channels": target_channels,
+                "final_bit_depth": target_bit_depth,
+                "final_bitrate_kbps": target_bitrate_kbps,
+                "standardized_audio_path": str(outputs["audio"]) if self.config.save_audio else None,
+            })
+
             if self._outputs_exist(base_dir):
                 result.update({
                     "processed": False,
@@ -484,6 +506,9 @@ class Preprocess:
                     "mel_path": str(outputs["mel"]) if self.config.save_mel else None,
                     "mfcc_path": str(outputs["mfcc"]) if self.config.save_mfcc else None,
                 })
+                result["sample_rate"] = target_sample_rate
+                result["num_channels"] = target_channels
+                result["bitrate_kbps"] = target_bitrate_kbps
                 return result
 
             audio_np, sr = sf.read(str(audio_path))
@@ -494,6 +519,7 @@ class Preprocess:
                 waveform = waveform.unsqueeze(0)
             else:
                 waveform = waveform.transpose(0, 1)
+
             waveform = self._ensure_mono(waveform).to(self.device)
 
             if sr != self.config.sample_rate:
@@ -515,6 +541,9 @@ class Preprocess:
             scalar_features = self._compute_scalar_features(waveform)
 
             base_dir.mkdir(parents=True, exist_ok=True)
+
+            if self.config.save_audio:
+                result["standardized_audio_path"] = self._save_standardized_audio(waveform, outputs["audio"])
             if self.config.save_waveform:
                 result["waveform_path"] = self._save_npy(waveform, outputs["waveform"])
             if self.config.save_mel:
@@ -527,6 +556,7 @@ class Preprocess:
                 "skipped_existing": False,
                 "sample_rate": self.config.sample_rate,
                 "num_channels": 1,
+                "bitrate_kbps": target_bitrate_kbps,
                 "duration_sec": float(waveform.shape[-1] / self.config.sample_rate),
                 "device_used": self.device.type,
             })
@@ -557,7 +587,6 @@ class Preprocess:
 
         df_new = pd.DataFrame(results)
 
-        # Actualiza el CSV final sin perder el histórico de otros dataset_source.
         if self.metadata_path.exists() and self.metadata_path.stat().st_size > 0:
             try:
                 df_old = pd.read_csv(self.metadata_path)
@@ -585,11 +614,9 @@ class Preprocess:
 
             except pd.errors.EmptyDataError:
                 df_final = df_new
-
         else:
             df_final = df_new
 
-        # 🔥 GUARDAR EL CSV FINAL (LÍNEA CRÍTICA QUE FALTABA)
         self.metadata_path.parent.mkdir(parents=True, exist_ok=True)
         df_final.to_csv(self.metadata_path, index=False)
         print(f"\n✅ CSV guardado en: {self.metadata_path}")
@@ -608,54 +635,169 @@ class Preprocess:
             "sample_rate": self.config.sample_rate,
             "target_duration": self.config.target_duration,
             "augment": self.config.augment,
+            "save_audio": self.config.save_audio,
+            "audio_subtype": self.config.output_audio_subtype,
         }
 
+    def _compute_scalar_features(self, waveform: torch.Tensor) -> Dict[str, float]:
+        eps = 1e-10
+
+        x = waveform.squeeze(0)
+
+        # RMS
+        rms = torch.sqrt(torch.mean(x ** 2)).item()
+
+        # Zero Crossing Rate
+        zcr = (
+            ((x[:-1] * x[1:]) < 0).float().mean().item()
+            if x.numel() > 1
+            else 0.0
+        )
+
+        # STFT
+        window = self._get_window(self.config.n_fft)
+
+        spec = torch.stft(
+            waveform,
+            n_fft=self.config.n_fft,
+            hop_length=self.config.hop_length,
+            win_length=self.config.n_fft,
+            window=window,
+            center=True,
+            return_complex=True,
+        ).abs().squeeze(0)
+
+        mag_mean = spec.mean(dim=-1)
+
+        freqs = torch.linspace(
+            0.0,
+            float(self.config.sample_rate) / 2.0,
+            mag_mean.shape[0],
+            device=mag_mean.device,
+        )
+
+        mag_sum = mag_mean.sum().clamp_min(eps)
+
+        # Spectral centroid
+        centroid = (freqs * mag_mean).sum() / mag_sum
+
+        # Spectral bandwidth
+        bandwidth = torch.sqrt(
+            (((freqs - centroid) ** 2) * mag_mean).sum() / mag_sum
+        )
+
+        # Spectral rolloff
+        cumulative = torch.cumsum(mag_mean, dim=0)
+        threshold = 0.85 * mag_sum
+
+        rolloff_idx = torch.searchsorted(
+            cumulative,
+            threshold
+        ).clamp(max=mag_mean.shape[0] - 1)
+
+        rolloff = freqs[rolloff_idx]
+
+        # Spectral flatness
+        flatness = (
+            torch.exp(torch.mean(torch.log(mag_mean.clamp_min(eps))))
+            / mag_mean.mean().clamp_min(eps)
+        )
+
+        return {
+            "rms": float(rms),
+            "zcr": float(zcr),
+            "spectral_centroid": float(centroid.item()),
+            "spectral_bandwidth": float(bandwidth.item()),
+            "spectral_rolloff": float(rolloff.item()),
+            "spectral_flatness": float(flatness.item()),
+        }
+    def process_audio_file(
+        self,
+        audio_path: PathLike,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Procesa un único archivo de audio y devuelve (mel, mfcc) listos para inferencia.
+
+        A diferencia de ``process_single_audio``, este método no necesita un CSV ni
+        guarda nada en disco: sólo carga el audio, aplica el pipeline estándar
+        (mono → resampleo → fix_length → normalización de pico → features) y
+        devuelve los tensores.
+
+        Parameters
+        ----------
+        audio_path : str | Path
+            Ruta al archivo de audio (.wav, .mp3, …).
+
+        Returns
+        -------
+        mel  : torch.Tensor  — shape [1, n_mels, T],  float32, en ``self.device``
+        mfcc : torch.Tensor  — shape [1, n_mfcc, T],  float32, en ``self.device``
+        """
+        path = Path(audio_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Audio no encontrado: {path}")
+
+        audio_np, sr = sf.read(str(path))
+
+        waveform = torch.tensor(audio_np, dtype=torch.float32)
+
+        if waveform.ndim == 1:
+            waveform = waveform.unsqueeze(0)
+        else:
+            waveform = waveform.transpose(0, 1)
+
+        waveform = self._ensure_mono(waveform).to(self.device)
+
+        resampler = self._get_resampler(sr)
+        if resampler is not None:
+            waveform = resampler(waveform)
+
+        waveform = self._fix_length(waveform)
+        waveform = self._normalize_peak(waveform)
+
+        with torch.inference_mode():
+            mel  = self.amplitude_to_db(self.mel_transform(waveform))  # [1, n_mels, T]
+            mfcc = self.mfcc_transform(waveform)                        # [1, n_mfcc, T]
+
+        return mel.float(), mfcc.float()
 
 
 def main():
     """
     Ejecución del preprocesado incremental.
     """
-    # 1. Definir rutas base
-    
-  
-    # Definimos los nombres de los archivos
-    # csv_filenames = ["UrbanSound8k.csv","audioset.csv","ESC50.csv","zenodo.csv","Guns_DS.csv","VOICe.csv","driver_safety.csv", "emergencysound.csv", "Enhanced_audio_of_accident.csv" ]
     csv_filenames = ["dataset_final_resampled.csv"]
-
-
-    # Mapeamos para agregar el raw_dir usando una list comprehension
     csv_paths = [RAW_DIR / f for f in csv_filenames]
-    # 2. Configurar los parámetros (usando solo campos existentes en PreprocessConfig)
-    # Nota: Se eliminó 'batch_size' ya que no existe en tu dataclass.
+
     config = PreprocessConfig(
         sample_rate=44100,
+        target_duration=5.0,
+        augment=False,
+        save_audio=True,
+        output_audio_subtype="PCM_16",
+        output_audio_format="WAV",
         n_mels=128,
         n_mfcc=13,
-        target_duration=None,
-        augment=False,
-        use_multiprocessing=True  # Se define aquí, no en el run()
+        save_waveform=False,
+        save_mel=True,
+        save_mfcc=True,
+        use_multiprocessing=True,
     )
 
-    # 3. Instanciar la clase Preprocess
-    # El parámetro correcto es 'csv_paths' (en plural)
     pp = Preprocess(
         csv_paths=csv_paths,
         raw_dir=RAW_DIR,
         interim_dir=INTERIM_DIR,
-        config=config
+        config=config,
     )
 
-    # 4. Ejecutar el proceso
-    # El método run() en tu clase solo acepta csv_paths opcionales.
-    # Los demás parámetros (audio_dir, output_dir, etc.) ya se pasaron en el __init__.
     df_processed = pp.run()
 
-    # 5. Resultados
     print("\n--- Resumen del proceso ---")
     print(df_processed.head())
     print(f"Total de registros en el histórico: {len(df_processed)}")
     return df_processed
+
 
 if __name__ == "__main__":
     main()

@@ -18,5 +18,7 @@
         "titleBar.inactiveBackground": "#4373e299",
         "titleBar.inactiveForeground": "#e7e7e799"
     },
+    "terminal.integrated.enableVisualBell": true,
+    "audioCues.enabled": "on",
     "peacock.color": "#4373e2"
 }

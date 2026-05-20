@@ -1,0 +1,7 @@
+🔥 Lo que te recomiendo construir
+Pipeline app:
+modelo → predicción por frame
+buffer temporal (5–10s)
+score acumulado por clase
+hysteresis
+cooldown

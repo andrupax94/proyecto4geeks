@@ -28,6 +28,21 @@ DEFAULT_SCALAR_COLUMNS = [
 
 
 class ProcessedAudioDataset(Dataset):
+    """
+    Modos de mapping (mapping_mode):
+      - "total"        : todas las clases human_label (sin filtro de alertable/emergency)
+      - "human"        : solo filas con alertable == True
+      - "alertable"    : target es la columna alertable (clasificación binaria)
+      - "emergency"    : solo filas con alertable == True y emergency == True
+      - "no_alertable" : solo filas con alertable == False
+
+    Si se pasa label_mapping_path, el modo se autoinfiere del campo 'target_col'
+    guardado en el pickle. Se puede sobreescribir con mapping_mode.
+    """
+
+    # Modos que filtran filas y usan human_label como target
+    _HUMAN_LABEL_MODES = {"total", "human", "emergency", "no_alertable"}
+
     def __init__(
         self,
         metadata_csv: PathLike,
@@ -40,16 +55,54 @@ class ProcessedAudioDataset(Dataset):
         mel_column_candidates: Sequence[str] = ("mel_spec_path", "mel_path"),
         mfcc_column_candidates: Sequence[str] = ("mfcc_path",),
         target_column: str = "human_label",
+        mapping_mode: Optional[str] = None,  # "total" | "human" | "alertable" | "emergency"
     ) -> None:
 
         self.metadata_csv = Path(metadata_csv)
         self.df = pd.read_csv(self.metadata_csv)
 
+        # ── Filtro por split ──────────────────────────────────────────────────
         if split is not None and "split" in self.df.columns:
             self.df = self.df[self.df["split"] == split].reset_index(drop=True)
 
+        # ── Carga del label mapping y detección del modo ──────────────────────
+        self.label_mapping: Optional[Dict[Any, int]] = None
+        self.num_classes: Optional[int] = None
+        self._raw_payload: Optional[Dict] = None
+
+        if label_mapping_path is not None and Path(label_mapping_path).exists():
+            with open(label_mapping_path, "rb") as f:
+                self._raw_payload = pickle.load(f)
+
+            self.label_mapping = self._extract_label_mapping(self._raw_payload)
+            self.num_classes = len(self.label_mapping)
+
+            # Autoinfiere el modo desde el campo target_col del pickle
+            if mapping_mode is None and isinstance(self._raw_payload, dict):
+                target_col_in_pickle = self._raw_payload.get("target_col", "")
+                mapping_mode = self._infer_mode_from_pkl_path(
+                    str(label_mapping_path), target_col_in_pickle
+                )
+
+        self.mapping_mode = mapping_mode or "total"
+
+        # ── target_column se ajusta automáticamente según el modo ─────────────
+        if self.mapping_mode == "alertable":
+            self.target_column = "alertable"
+        else:
+            self.target_column = target_column  # "human_label" por defecto
+
+        if self.target_column not in self.df.columns:
+            raise KeyError(f"No existe la columna target '{self.target_column}' en el CSV.")
+
+        # ── Filtro de filas según el modo ─────────────────────────────────────
+        self.df = self._filter_by_mode(self.df, self.mapping_mode)
+
         if self.df.empty:
-            raise ValueError(f"No hay muestras disponibles en {self.metadata_csv} para split={split!r}.")
+            raise ValueError(
+                f"No hay muestras tras aplicar mapping_mode={self.mapping_mode!r} "
+                f"en {self.metadata_csv} para split={split!r}."
+            )
 
         self.use_mfcc = use_mfcc
         self.use_scalars = use_scalars
@@ -57,20 +110,6 @@ class ProcessedAudioDataset(Dataset):
 
         self.mel_column = self._resolve_existing_column(self.df.columns, mel_column_candidates)
         self.mfcc_column = self._resolve_existing_column(self.df.columns, mfcc_column_candidates, required=False)
-
-        self.target_column = target_column
-        if self.target_column not in self.df.columns:
-            raise KeyError(f"No existe la columna target '{self.target_column}' en el CSV.")
-
-        self.label_mapping: Optional[Dict[Any, int]] = None
-        self.num_classes: Optional[int] = None
-
-        if label_mapping_path is not None and Path(label_mapping_path).exists():
-            with open(label_mapping_path, "rb") as f:
-                payload = pickle.load(f)
-
-            self.label_mapping = self._extract_label_mapping(payload)
-            self.num_classes = len(self.label_mapping)
 
         self.available_scalar_columns = [c for c in self.scalar_columns if c in self.df.columns]
 
@@ -97,6 +136,69 @@ class ProcessedAudioDataset(Dataset):
             raise TypeError("El label mapping cargado no tiene el formato esperado.")
 
         return mapping
+
+    @staticmethod
+    def _infer_mode_from_pkl_path(pkl_path: str, target_col_in_pickle: str) -> str:
+        """
+        Autoinfiere el modo a partir del nombre del archivo pickle y/o el
+        campo target_col guardado en su interior.
+
+        Prioridad: nombre del archivo > target_col del pickle.
+        """
+        name = Path(pkl_path).stem.lower()
+
+        if "emergency" in name:
+            return "emergency"
+        if "no_alertable" in name:
+            return "no_alertable"
+        if "total" in name:
+            return "total"
+        if "human" in name:
+            return "human"
+        if "alertable" in name:
+            return "alertable"
+
+        # Fallback: usar target_col guardado en el pickle
+        if target_col_in_pickle == "alertable":
+            return "alertable"
+
+        return "total"  # default seguro
+
+    def _filter_by_mode(self, df: pd.DataFrame, mode: str) -> pd.DataFrame:
+        """
+        Filtra las filas del dataframe según el modo de mapping:
+          - "total"        : sin filtro
+          - "human"        : alertable == True
+          - "alertable"    : sin filtro (target es la propia columna alertable)
+          - "emergency"    : alertable == True AND emergency == True
+          - "no_alertable" : alertable == False
+        """
+        if mode == "total" or mode == "alertable":
+            return df.reset_index(drop=True)
+
+        if mode in ("human", "emergency", "no_alertable"):
+            if "alertable" not in df.columns:
+                raise KeyError(
+                    f"mapping_mode={mode!r} requiere la columna 'alertable' en el CSV."
+                )
+
+        if mode == "no_alertable":
+            mask = df["alertable"].apply(self._normalize_alertable_value) == False  # noqa: E712
+            return df[mask].reset_index(drop=True)
+
+        if mode in ("human", "emergency"):
+            alertable_mask = df["alertable"].apply(self._normalize_alertable_value) == True  # noqa: E712
+            df = df[alertable_mask]
+
+        if mode == "emergency":
+            if "emergency" not in df.columns:
+                raise KeyError(
+                    "mapping_mode='emergency' requiere la columna 'emergency' en el CSV."
+                )
+            emergency_mask = df["emergency"].apply(self._normalize_alertable_value) == True  # noqa: E712
+            df = df[emergency_mask]
+
+        return df.reset_index(drop=True)
 
     @staticmethod
     def _normalize_alertable_value(value: Any) -> Optional[bool]:

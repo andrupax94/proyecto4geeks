@@ -44,10 +44,20 @@ AUDIOSET_DATASET_PATH = RAW_DIR / "audioset.csv"
 ESPECTOGRAMS_DIR = INTERIM_DIR / "processed_dataset"
 
 LABEL_MAPPING = {
+  
     "human_label": INTERIM_DIR / "processed_dataset" / "label_mapping_human_label.pkl",
     "alertable": INTERIM_DIR / "processed_dataset" / "label_mapping_alertable.pkl",
+    "emergency": INTERIM_DIR / "processed_dataset" / "label_mapping_emergency.pkl",
+    "total": INTERIM_DIR / "processed_dataset" / "label_mapping_total.pkl",
+    "human_label2": INTERIM_DIR / "processed_dataset" / "label_mapping_human_labelV2.pkl",
+    "alertable2": INTERIM_DIR / "processed_dataset" / "label_mapping_alertableV2.pkl",
+    "emergency2": INTERIM_DIR / "processed_dataset" / "label_mapping_emergencyV2.pkl",
+    "total2": INTERIM_DIR / "processed_dataset" / "label_mapping_totalV2.pkl",
 }
-PROCESSED_METADATA = ESPECTOGRAMS_DIR / "processed_metadata.csv"
+PROCESSED_METADATA = {
+    "1":ESPECTOGRAMS_DIR / "processed_metadata.csv",
+    "2":ESPECTOGRAMS_DIR / "processed_metadataV2.csv"
+    }
 PROCESSED_METADATA_SPLIT_FIX = ESPECTOGRAMS_DIR / "dataset_fixed.csv"
 
 # ===============================
@@ -70,7 +80,8 @@ FINAL_MODEL_DIR = MODELS_DIR / "final"
 # =========================
 
 # 💥 EXPLOSIONS
-YOUTUBE_EXPLOSIONS_DIR = DATA_DIR / "youtube_explosions"
+YOUTUBE_DIR = BUILD_DIR / "youtube"
+YOUTUBE_EXPLOSIONS_DIR = YOUTUBE_DIR / "youtube_explosions"
 
 YOUTUBE_RAW_DIR = YOUTUBE_EXPLOSIONS_DIR / "raw"
 YOUTUBE_PROCESSED_DIR = YOUTUBE_EXPLOSIONS_DIR / "explosion"
@@ -79,10 +90,15 @@ TEST_FOLDER=ROOT_DIR / "tests"
 TEST_AUDIO_FOLDER= TEST_FOLDER/ "audios"
 
 # 🔥 FIRE
-YOUTUBE_FIRE_DIR = DATA_DIR / "youtube_fire"
+YOUTUBE_FIRE_DIR = YOUTUBE_DIR / "youtube_fire"
 YOUTUBE_FIRE_VIDEO_DIR = YOUTUBE_FIRE_DIR / "raw"
 YOUTUBE_FIRE_AUDIO_DIR = YOUTUBE_FIRE_DIR / "fire"
 YOUTUBE_URLS_FILE_FIRE= YOUTUBE_FIRE_DIR / "youtube_urls.txt"
+# 🔥 CAR SRASH
+YOUTUBE_CARCRASH_DIR = YOUTUBE_DIR / "youtube_car_crash"
+YOUTUBE_CARCRASH_VIDEO_DIR = YOUTUBE_CARCRASH_DIR / "raw"
+YOUTUBE_CARCRASH_AUDIO_DIR = YOUTUBE_CARCRASH_DIR / "car_crash"
+YOUTUBE_URLS_FILE_CARCRASH= YOUTUBE_CARCRASH_DIR / "youtube_urls.txt"
 
 # PARAMETROS AUDIO
 MAX_VIDEO_DURATION = 1800
@@ -92,7 +108,7 @@ CHANNELS = 1
 ENERGY_THRESHOLD = 0.003
 
 # 🔫 GUNSHOT
-YOUTUBE_GUNSHOT_DIR = DATA_DIR / "youtube_gunshot"
+YOUTUBE_GUNSHOT_DIR = YOUTUBE_DIR / "youtube_gunshot"
 
 YOUTUBE_GUNSHOT_VIDEO_DIR = YOUTUBE_GUNSHOT_DIR / "raw"
 YOUTUBE_GUNSHOT_AUDIO_DIR = YOUTUBE_GUNSHOT_DIR / "gunshot"

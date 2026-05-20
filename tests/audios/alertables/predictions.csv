@@ -1,0 +1,13 @@
+filename,prediction,confidence,prob_siren_alarm,prob_traffic,prob_gun_shot,prob_crying,prob_fire,prob_fight,prob_construction_noise,prob_glass_breaking,prob_dog,prob_car_crash
+11325622-police-siren-sound-effect-240674.mp3,siren_alarm,0.9600542187690735,0.9601,0.0113,0.0084,0.005,0.0042,,,,,
+"ElevenLabs_A_6_to_7-year-old_child_crying_and_calling__Babi_Babi__in_Albanian,_small_trembling_voice,_emo.mp3",crying,0.9051476716995239,0.0082,0.0061,0.0152,0.9051,,0.0491,,,,
+audio_607a0.mp3,gun_shot,0.9317178726196289,,,0.9317,0.0411,0.0041,,0.0084,0.003,,
+dragon-studio-car-crash-sound-effect-376874.mp3,gun_shot,0.9441064596176147,,,0.9441,0.0055,0.0072,0.0049,,0.0232,,
+dragon-studio-dog-barking-406629.mp3,dog,0.9852419495582581,0.0018,0.0042,0.0017,,,,0.0022,,0.9852,
+explosion-meme_dTCfAHs.mp3,car_crash,0.85899418592453,,0.0087,0.0895,0.0072,,0.0081,,,,0.859
+freesound_community-car-crash-edit-two-92001.mp3,traffic,0.3805833160877228,0.1523,0.3806,0.212,,0.0706,,0.0466,,,
+freesound_community-dog-barking-70772.mp3,dog,0.9883601665496826,,0.0029,0.0015,,,,0.0023,0.0011,0.9884,
+freesound_community-glass-shatter-7-95202.mp3,glass_breaking,0.6933822631835938,0.0268,,0.045,,0.1296,,0.0421,0.6934,,
+freesound_community-m4-assault-rifle-long-burst-102682.mp3,traffic,0.6154768466949463,0.0731,0.6155,0.0548,,,,0.1436,,0.053,
+m4a1_unsil-1_d6515.mp3,gun_shot,0.9720484614372253,,0.0033,0.972,0.0042,,,,0.004,,0.0039
+u_mgq59j5ayf-sound-effect-car-crash-394903.mp3,gun_shot,0.7345127463340759,,,0.7345,0.0323,0.0211,,0.0335,0.1307,,
