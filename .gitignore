@@ -11,7 +11,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.so
-
+*/processed_metadataV2.csv
 # Build / packaging
 dist/
 site/
