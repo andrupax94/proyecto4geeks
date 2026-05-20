@@ -65,6 +65,7 @@ PROCESSED_METADATA_SPLIT_FIX = ESPECTOGRAMS_DIR / "dataset_fixed.csv"
 # ===============================
 
 DATASET_FINAL = RAW_DIR / "dataset_final.csv"
+DATASET_FINALV2 = RAW_DIR / "dataset_finalV2.csv"
 EDA_BALANCED = RAW_DIR / "eda_balanced.csv"
 
 # ===============================
