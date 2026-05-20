@@ -385,57 +385,6 @@ class Preprocess:
         )
         return str(out)
 
-    @staticmethod
-    def _subtype_to_bits_per_sample(subtype: Optional[str]) -> Optional[int]:
-        if not subtype:
-            return None
-        subtype = str(subtype).upper()
-        mapping = {
-            "PCM_U8": 8,
-            "PCM_16": 16,
-            "PCM_24": 24,
-            "PCM_32": 32,
-            "FLOAT": 32,
-            "DOUBLE": 64,
-            "ULAW": 8,
-            "ALAW": 8,
-        }
-        return mapping.get(subtype)
-
-    @staticmethod
-    def _estimate_bitrate_kbps(sample_rate: Optional[int], channels: Optional[int], bits_per_sample: Optional[int]) -> Optional[float]:
-        if sample_rate is None or channels is None or bits_per_sample is None:
-            return None
-        return (float(sample_rate) * float(channels) * float(bits_per_sample)) / 1000.0
-
-    def _read_audio_info(self, audio_path: Path) -> Dict[str, Any]:
-        info: Dict[str, Any] = {
-            "original_sample_rate": None,
-            "original_channels": None,
-            "original_frames": None,
-            "original_duration_sec": None,
-            "original_subtype": None,
-            "original_bit_depth": None,
-            "original_bitrate_kbps": None,
-        }
-        try:
-            audio_info = sf.info(str(audio_path))
-            info["original_sample_rate"] = int(audio_info.samplerate) if audio_info.samplerate else None
-            info["original_channels"] = int(audio_info.channels) if audio_info.channels else None
-            info["original_frames"] = int(audio_info.frames) if audio_info.frames else None
-            if audio_info.samplerate and audio_info.frames:
-                info["original_duration_sec"] = float(audio_info.frames / audio_info.samplerate)
-            info["original_subtype"] = getattr(audio_info, "subtype", None)
-            info["original_bit_depth"] = self._subtype_to_bits_per_sample(info["original_subtype"])
-            info["original_bitrate_kbps"] = self._estimate_bitrate_kbps(
-                info["original_sample_rate"],
-                info["original_channels"],
-                info["original_bit_depth"],
-            )
-        except Exception:
-            pass
-        return info
-
     def _output_base(self, dataset_source: str, human_label: str, audio_stem: str) -> Path:
         return (
             self.output_dir
@@ -465,6 +414,16 @@ class Preprocess:
             checks.append(outs["mfcc"].exists())
         return bool(checks) and all(checks)
 
+    # Columnas del CSV de entrada que se propagan al CSV de salida.
+    # Solo se retienen las que consumen audio_dataset.py / trainV3.py.
+    _PASSTHROUGH_COLUMNS: Sequence[str] = (
+        "human_label",
+        "alertable",
+        "emergency",
+        "split",
+        "dataset_source",
+    )
+
     def process_single_audio(self, row: pd.Series, cols: Dict[str, str]) -> Optional[Dict[str, Any]]:
         try:
             audio_path = self._audio_path_from_row(row, cols["path"])
@@ -478,37 +437,17 @@ class Preprocess:
             base_dir = self._output_base(dataset_source, human_label, audio_path.stem)
             outputs = self._existing_outputs(base_dir)
 
-            result: Dict[str, Any] = row.to_dict()
-            result["resolved_audio_path"] = str(audio_path)
-            result["output_base_dir"] = str(base_dir)
-
-            audio_info = self._read_audio_info(audio_path)
-            result.update(audio_info)
-
-            target_channels = 1
-            target_sample_rate = self.config.sample_rate
-            target_bit_depth = self._subtype_to_bits_per_sample(self.config.output_audio_subtype)
-            target_bitrate_kbps = self._estimate_bitrate_kbps(target_sample_rate, target_channels, target_bit_depth)
-
-            result.update({
-                "final_sample_rate": target_sample_rate,
-                "final_channels": target_channels,
-                "final_bit_depth": target_bit_depth,
-                "final_bitrate_kbps": target_bitrate_kbps,
-                "standardized_audio_path": str(outputs["audio"]) if self.config.save_audio else None,
-            })
+            # ── Construir result solo con columnas necesarias ─────────────────
+            result: Dict[str, Any] = {
+                col: row[col]
+                for col in self._PASSTHROUGH_COLUMNS
+                if col in row.index
+            }
+            result["filename"] = audio_path.stem
 
             if self._outputs_exist(base_dir):
-                result.update({
-                    "processed": False,
-                    "skipped_existing": True,
-                    "waveform_path": str(outputs["waveform"]) if self.config.save_waveform else None,
-                    "mel_path": str(outputs["mel"]) if self.config.save_mel else None,
-                    "mfcc_path": str(outputs["mfcc"]) if self.config.save_mfcc else None,
-                })
-                result["sample_rate"] = target_sample_rate
-                result["num_channels"] = target_channels
-                result["bitrate_kbps"] = target_bitrate_kbps
+                result["mel_path"] = str(outputs["mel"]) if self.config.save_mel else None
+                result["mfcc_path"] = str(outputs["mfcc"]) if self.config.save_mfcc else None
                 return result
 
             audio_np, sr = sf.read(str(audio_path))
@@ -538,29 +477,17 @@ class Preprocess:
                 mel_db = self.amplitude_to_db(mel)
                 mfcc = self.mfcc_transform(waveform)
 
-            scalar_features = self._compute_scalar_features(waveform)
-
             base_dir.mkdir(parents=True, exist_ok=True)
 
             if self.config.save_audio:
-                result["standardized_audio_path"] = self._save_standardized_audio(waveform, outputs["audio"])
+                self._save_standardized_audio(waveform, outputs["audio"])
             if self.config.save_waveform:
-                result["waveform_path"] = self._save_npy(waveform, outputs["waveform"])
+                self._save_npy(waveform, outputs["waveform"])
             if self.config.save_mel:
                 result["mel_path"] = self._save_npy(mel_db, outputs["mel"])
             if self.config.save_mfcc:
                 result["mfcc_path"] = self._save_npy(mfcc, outputs["mfcc"])
 
-            result.update({
-                "processed": True,
-                "skipped_existing": False,
-                "sample_rate": self.config.sample_rate,
-                "num_channels": 1,
-                "bitrate_kbps": target_bitrate_kbps,
-                "duration_sec": float(waveform.shape[-1] / self.config.sample_rate),
-                "device_used": self.device.type,
-            })
-            result.update(scalar_features)
             return result
 
         except Exception as e:
@@ -639,78 +566,6 @@ class Preprocess:
             "audio_subtype": self.config.output_audio_subtype,
         }
 
-    def _compute_scalar_features(self, waveform: torch.Tensor) -> Dict[str, float]:
-        eps = 1e-10
-
-        x = waveform.squeeze(0)
-
-        # RMS
-        rms = torch.sqrt(torch.mean(x ** 2)).item()
-
-        # Zero Crossing Rate
-        zcr = (
-            ((x[:-1] * x[1:]) < 0).float().mean().item()
-            if x.numel() > 1
-            else 0.0
-        )
-
-        # STFT
-        window = self._get_window(self.config.n_fft)
-
-        spec = torch.stft(
-            waveform,
-            n_fft=self.config.n_fft,
-            hop_length=self.config.hop_length,
-            win_length=self.config.n_fft,
-            window=window,
-            center=True,
-            return_complex=True,
-        ).abs().squeeze(0)
-
-        mag_mean = spec.mean(dim=-1)
-
-        freqs = torch.linspace(
-            0.0,
-            float(self.config.sample_rate) / 2.0,
-            mag_mean.shape[0],
-            device=mag_mean.device,
-        )
-
-        mag_sum = mag_mean.sum().clamp_min(eps)
-
-        # Spectral centroid
-        centroid = (freqs * mag_mean).sum() / mag_sum
-
-        # Spectral bandwidth
-        bandwidth = torch.sqrt(
-            (((freqs - centroid) ** 2) * mag_mean).sum() / mag_sum
-        )
-
-        # Spectral rolloff
-        cumulative = torch.cumsum(mag_mean, dim=0)
-        threshold = 0.85 * mag_sum
-
-        rolloff_idx = torch.searchsorted(
-            cumulative,
-            threshold
-        ).clamp(max=mag_mean.shape[0] - 1)
-
-        rolloff = freqs[rolloff_idx]
-
-        # Spectral flatness
-        flatness = (
-            torch.exp(torch.mean(torch.log(mag_mean.clamp_min(eps))))
-            / mag_mean.mean().clamp_min(eps)
-        )
-
-        return {
-            "rms": float(rms),
-            "zcr": float(zcr),
-            "spectral_centroid": float(centroid.item()),
-            "spectral_bandwidth": float(bandwidth.item()),
-            "spectral_rolloff": float(rolloff.item()),
-            "spectral_flatness": float(flatness.item()),
-        }
     def process_audio_file(
         self,
         audio_path: PathLike,
