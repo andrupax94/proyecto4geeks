@@ -24,8 +24,8 @@ if __name__ == "__main__":
             sinonimos=None,
             nocsv=True,
             nombre_salida=nombre_salida,
-            ruta_csv_sinonimos=BUILD_DIR / "sinonimosV4.csv",
-            ruta_csv_alert_env=BUILD_DIR / "canonical_clasesV2.csv",
+            ruta_csv_sinonimos=BUILD_DIR / "sinonimosV5.csv",
+            ruta_csv_alert_env=BUILD_DIR / "canonical_clasesV3.csv",
             dataset_name="Enhanced_audio_of_accident",
             split=val[1]
         )

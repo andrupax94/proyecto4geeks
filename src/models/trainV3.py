@@ -18,15 +18,15 @@ import collections
 
 class CFG:
     batch_size = 32  # ⬇️ Reducido de 64 para evitar memory issues
-    lr = 1e-4# 3e-4, 1e-4, 1e-5
-    weight_decay = 1e-3
-    epochs = 20
+    lr = 3e-4# 3e-4, 1e-4, 1e-5
+    weight_decay = 1e-3 #1e-4
+    epochs = 30
     num_workers = 4  # ⬇️ Reducido de 8 para evitar deadlocks
     use_mfcc = True
     use_scalars = False
     seed = 42
     print_every = 50
-    target_type = "alertable"
+    target_type = "human_label"
     mode = "mel_only"
     label_version = 2
     version = 2
@@ -41,7 +41,7 @@ class CFG:
     # 🎯 FOCUS CLASSES — clases problemáticas detectadas en la matriz de confusión.
     # Ejemplo: focus_classes = ["dog_bark", "car_horn", "siren"]
     # Dejar vacío para desactivar: focus_classes = []
-    focus_classes: list = []
+    focus_classes: list = [True]
 
     # Multiplicador de peso en la loss para las focus classes (>1 = más penalización)
     focus_loss_weight: float = 2

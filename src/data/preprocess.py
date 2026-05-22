@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 import warnings
 import pickle
+import os
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
@@ -26,11 +29,12 @@ PathLike = Union[str, Path]
 @dataclass
 class PreprocessConfig:
     # Estandarización de audio
-    sample_rate: int = 44100
-    target_duration: Optional[float] = 5.0
+    sample_rate: int = 22050
+    target_duration: Optional[float] = 3.0
     normalize_peak: bool = True
     peak_target: float = 0.99
     augment: bool = False
+    augment_inference: bool = False  # Simula ruido de dominio para audios limpios externos
 
     # Formato de salida estandarizado
     save_audio: bool = True
@@ -41,10 +45,10 @@ class PreprocessConfig:
     # Features
     n_mels: int = 128
     n_mfcc: int = 13
-    n_fft: int = 2048
-    hop_length: int = 512
+    n_fft: int = 1024
+    hop_length: int = 256
 
-    save_waveform: bool = False
+    save_waveform: bool = True   # activado para modo mel+waveform en hybrid_cnn_v3
     save_mel: bool = True
     save_mfcc: bool = True
 
@@ -63,7 +67,11 @@ class PreprocessConfig:
     dataset_source_candidates: Sequence[str] = ("dataset_source", "source", "dataset")
     split_candidates: Sequence[str] = ("split", "subset", "partition")
 
-    use_multiprocessing: bool = False
+    use_multiprocessing: bool = True
+    # None → usa os.cpu_count() workers automáticamente.
+    # Recomendado: 4-8 para disco SSD, 2-4 para HDD.
+    # Si el cuello de botella es la GPU no pongas mas workers que los que
+    # tu GPU pueda alimentar en paralelo.
     num_workers: Optional[int] = None
 
 
@@ -100,6 +108,9 @@ class Preprocess:
 
         self._resampler_cache: Dict[int, torchaudio.transforms.Resample] = {}
         self._window_cache: Dict[tuple, torch.Tensor] = {}
+        # Locks para proteger los caches compartidos entre threads
+        self._resampler_lock = threading.Lock()
+        self._window_lock    = threading.Lock()
 
         self.mel_transform = T.MelSpectrogram(
             sample_rate=self.config.sample_rate,
@@ -176,47 +187,76 @@ class Preprocess:
             "num_classes": len(label2idx),
         }
 
+    def _empty_label_map(self, target_col: str = "human_label") -> Dict[str, Any]:
+        return {
+            "target_col": target_col,
+            "label2idx": {},
+            "idx2label": {},
+            "num_classes": 0,
+        }
+
     def _generate_label_mappings(self, df: pd.DataFrame) -> None:
+        # ─────────────────────────────────────────────────────────
+        # TOTAL: todas las human_label
+        # ─────────────────────────────────────────────────────────
         if "human_label" in df.columns:
             total_map = self._build_label_mapping(df, "human_label")
             self._save_pickle(total_map, self.label_mapping_total_path)
             print(f"🧩 Label mapping guardado (total): {self.label_mapping_total_path}")
 
+        # ─────────────────────────────────────────────────────────
+        # HUMAN LABELS CON alertable == True
+        # ─────────────────────────────────────────────────────────
         if "human_label" in df.columns and "alertable" in df.columns:
-            alertable_mask = df["alertable"].apply(self._normalize_alertable_value) == True  # noqa: E712
-            df_alertable = df[alertable_mask]
+            alertable_norm = df["alertable"].apply(self._normalize_alertable_value)
+
+            df_alertable = df[alertable_norm == True]  # noqa: E712
             if not df_alertable.empty:
                 human_map = self._build_label_mapping(df_alertable, "human_label")
             else:
-                human_map = {"target_col": "human_label", "label2idx": {}, "idx2label": {}, "num_classes": 0}
+                human_map = self._empty_label_map("human_label")
+
             self._save_pickle(human_map, self.label_mapping_human_path)
             print(f"🧩 Label mapping guardado (human alertable): {self.label_mapping_human_path}")
 
+        # ─────────────────────────────────────────────────────────
+        # ALERTABLE COMPLETO (true/false)
+        # ─────────────────────────────────────────────────────────
         if "alertable" in df.columns:
             alert_map = self._build_label_mapping(df, "alertable")
             self._save_pickle(alert_map, self.label_mapping_alertable_path)
             print(f"🧩 Label mapping guardado (alertable): {self.label_mapping_alertable_path}")
 
+        # ─────────────────────────────────────────────────────────
+        # EMERGENCY: human_label donde alertable == True y emergency == True
+        # ─────────────────────────────────────────────────────────
         if "human_label" in df.columns and "alertable" in df.columns and "emergency" in df.columns:
-            alertable_mask = df["alertable"].apply(self._normalize_alertable_value) == True  # noqa: E712
-            emergency_mask = df["emergency"].apply(self._normalize_alertable_value) == True  # noqa: E712
-            df_emergency = df[alertable_mask & emergency_mask]
+            alertable_norm = df["alertable"].apply(self._normalize_alertable_value)
+            emergency_norm = df["emergency"].apply(self._normalize_alertable_value)
+
+            df_emergency = df[(alertable_norm == True) & (emergency_norm == True)]  # noqa: E712
             if not df_emergency.empty:
                 emergency_map = self._build_label_mapping(df_emergency, "human_label")
             else:
-                emergency_map = {"target_col": "human_label", "label2idx": {}, "idx2label": {}, "num_classes": 0}
+                emergency_map = self._empty_label_map("human_label")
+
             self._save_pickle(emergency_map, self.label_mapping_emergency_path)
             print(f"🧩 Label mapping guardado (emergency): {self.label_mapping_emergency_path}")
         elif "human_label" in df.columns and "emergency" not in df.columns:
             print("⚠️  Columna 'emergency' no encontrada; label_mapping_emergency no generado.")
 
+        # ─────────────────────────────────────────────────────────
+        # HUMAN LABELS CON alertable == False
+        # ─────────────────────────────────────────────────────────
         if "human_label" in df.columns and "alertable" in df.columns:
-            no_alertable_mask = df["alertable"].apply(self._normalize_alertable_value) == False  # noqa: E712
-            df_no_alertable = df[no_alertable_mask]
+            alertable_norm = df["alertable"].apply(self._normalize_alertable_value)
+
+            df_no_alertable = df[alertable_norm == False]  # noqa: E712
             if not df_no_alertable.empty:
                 no_alertable_map = self._build_label_mapping(df_no_alertable, "human_label")
             else:
-                no_alertable_map = {"target_col": "human_label", "label2idx": {}, "idx2label": {}, "num_classes": 0}
+                no_alertable_map = self._empty_label_map("human_label")
+
             self._save_pickle(no_alertable_map, self.label_mapping_human_no_alertable_path)
             print(f"🧩 Label mapping guardado (human no alertable): {self.label_mapping_human_no_alertable_path}")
 
@@ -316,18 +356,20 @@ class Preprocess:
     def _get_resampler(self, orig_sr: int) -> Optional[torchaudio.transforms.Resample]:
         if orig_sr == self.config.sample_rate:
             return None
-        if orig_sr not in self._resampler_cache:
-            self._resampler_cache[orig_sr] = T.Resample(
-                orig_freq=orig_sr,
-                new_freq=self.config.sample_rate,
-            ).to(self.device)
-        return self._resampler_cache[orig_sr]
+        with self._resampler_lock:
+            if orig_sr not in self._resampler_cache:
+                self._resampler_cache[orig_sr] = T.Resample(
+                    orig_freq=orig_sr,
+                    new_freq=self.config.sample_rate,
+                ).to(self.device)
+            return self._resampler_cache[orig_sr]
 
     def _get_window(self, n_fft: int) -> torch.Tensor:
         key = (self.device.type, str(self.device), n_fft)
-        if key not in self._window_cache:
-            self._window_cache[key] = torch.hann_window(n_fft, device=self.device)
-        return self._window_cache[key]
+        with self._window_lock:
+            if key not in self._window_cache:
+                self._window_cache[key] = torch.hann_window(n_fft, device=self.device)
+            return self._window_cache[key]
 
     @staticmethod
     def _ensure_mono(waveform: torch.Tensor) -> torch.Tensor:
@@ -364,6 +406,85 @@ class Preprocess:
             max_shift = max(1, int(0.08 * waveform.shape[-1]))
             shift = int(torch.randint(-max_shift, max_shift + 1, (1,), device=waveform.device).item())
             waveform = torch.roll(waveform, shifts=shift, dims=-1)
+        return waveform
+
+    def _augment_for_inference(self, waveform: torch.Tensor) -> torch.Tensor:
+        """
+        Simula el dominio de entrenamiento (audio "sucio" de calle/teléfono/micrófono)
+        sobre un audio limpio externo, para reducir el mismatch de dominio en inferencia.
+
+        Aumentaciones aplicadas (todas con probabilidad moderada para no destruir la señal):
+
+        1. Ruido gaussiano leve  — simula fondo de calle / electrónica
+        2. Banda de frecuencias limitada (EQ telefónico)  — recorta agudos y graves
+           usando un filtro paso-banda aproximado con resample + FFT nulling
+        3. Ganancia aleatoria leve  — variaciones de volumen del micrófono
+        4. Reverberación sintética  — eco muy corto con decay, simula sala / espacio
+        """
+        device = waveform.device
+
+        # 1. Ruido de fondo gaussiano
+        if torch.rand(1, device=device).item() < 0.80:
+            noise_level = torch.empty(1, device=device).uniform_(0.002, 0.012).item()
+            waveform = waveform + torch.randn_like(waveform) * noise_level
+
+        # 2. EQ telefónico: atenuar frecuencias fuera de ~300–3400 Hz
+        #    Se implementa en el dominio de la frecuencia zeroing bins fuera de la banda.
+        if torch.rand(1, device=device).item() < 0.65:
+            sr = self.config.sample_rate
+            n = waveform.shape[-1]
+            # Índices de frecuencia correspondientes a 300 Hz y 3400 Hz
+            low_bin  = int(300  * n / sr)
+            high_bin = int(3400 * n / sr)
+            # Ancho de la transición suave (evitar artefactos de Gibbs)
+            ramp = max(1, int(50 * n / sr))
+
+            spec = torch.fft.rfft(waveform)
+            freq_bins = spec.shape[-1]
+
+            # Construir máscara de banda con rampas coseno
+            mask = torch.zeros(freq_bins, device=device)
+            lo = max(0, low_bin - ramp)
+            hi = min(freq_bins - 1, high_bin + ramp)
+            # Zona de paso plano
+            mask[low_bin:high_bin] = 1.0
+            # Rampa de subida
+            if low_bin > lo:
+                rlen = low_bin - lo
+                mask[lo:low_bin] = torch.linspace(0.0, 1.0, rlen, device=device)
+            # Rampa de bajada
+            if hi > high_bin:
+                rlen = hi - high_bin
+                mask[high_bin:hi] = torch.linspace(1.0, 0.0, rlen, device=device)
+
+            # Atenuar fuera de banda (no zeroing total para no sonar sintético)
+            full_mask = torch.ones(freq_bins, device=device) * 0.15
+            full_mask = torch.where(mask > 0, mask, full_mask)
+
+            spec = spec * full_mask.unsqueeze(0)
+            waveform = torch.fft.irfft(spec, n=n)
+
+        # 3. Variación de ganancia de micrófono
+        if torch.rand(1, device=device).item() < 0.70:
+            gain = torch.empty(1, device=device).uniform_(0.75, 1.20)
+            waveform = waveform * gain
+
+        # 4. Reverberación sintética muy corta (simula habitación / sala)
+        if torch.rand(1, device=device).item() < 0.50:
+            sr = self.config.sample_rate
+            # Delay de 10–40 ms, decay entre 0.08 y 0.25
+            delay_ms  = torch.empty(1, device=device).uniform_(10, 40).item()
+            delay_smp = int(delay_ms * sr / 1000)
+            decay     = torch.empty(1, device=device).uniform_(0.08, 0.25).item()
+            if delay_smp > 0 and delay_smp < waveform.shape[-1]:
+                echo = torch.zeros_like(waveform)
+                echo[..., delay_smp:] = waveform[..., :-delay_smp] * decay
+                waveform = waveform + echo
+
+        # Re-normalizar pico para no saturar tras las aumentaciones
+        peak = waveform.abs().max().clamp_min(1e-8)
+        waveform = waveform / peak * float(self.config.peak_target)
+
         return waveform
 
     def _save_npy(self, tensor: torch.Tensor, path_without_suffix: Path) -> str:
@@ -446,8 +567,9 @@ class Preprocess:
             result["filename"] = audio_path.stem
 
             if self._outputs_exist(base_dir):
-                result["mel_path"] = str(outputs["mel"]) if self.config.save_mel else None
-                result["mfcc_path"] = str(outputs["mfcc"]) if self.config.save_mfcc else None
+                result["waveform_path"] = str(outputs["waveform"]) if self.config.save_waveform else None
+                result["mel_path"]      = str(outputs["mel"])      if self.config.save_mel      else None
+                result["mfcc_path"]     = str(outputs["mfcc"])     if self.config.save_mfcc     else None
                 return result
 
             audio_np, sr = sf.read(str(audio_path))
@@ -482,11 +604,11 @@ class Preprocess:
             if self.config.save_audio:
                 self._save_standardized_audio(waveform, outputs["audio"])
             if self.config.save_waveform:
-                self._save_npy(waveform, outputs["waveform"])
+                result["waveform_path"] = self._save_npy(waveform, outputs["waveform"])
             if self.config.save_mel:
-                result["mel_path"] = self._save_npy(mel_db, outputs["mel"])
+                result["mel_path"]      = self._save_npy(mel_db, outputs["mel"])
             if self.config.save_mfcc:
-                result["mfcc_path"] = self._save_npy(mfcc, outputs["mfcc"])
+                result["mfcc_path"]     = self._save_npy(mfcc, outputs["mfcc"])
 
             return result
 
@@ -507,10 +629,40 @@ class Preprocess:
         print(f"Dispositivo: {self.device} | {self.device_name}")
 
         results: List[Dict[str, Any]] = []
-        for _, row in tqdm(incoming.iterrows(), total=len(incoming), desc="Procesando audios"):
-            processed = self.process_single_audio(row, cols)
-            if processed is not None:
-                results.append(processed)
+
+        if self.config.use_multiprocessing:
+            # ── Modo paralelo (ThreadPoolExecutor) ───────────────────────
+            # Se usan threads en lugar de procesos porque:
+            #   1. Los nn.Module de PyTorch no son serializables con pickle
+            #      (requisito de multiprocessing con spawn/fork).
+            #   2. El bottleneck real es I/O (leer .wav, escribir .npy) +
+            #      cómputo PyTorch que libera el GIL internamente →
+            #      los threads se benefician igual que los procesos.
+            #   3. Memoria compartida: todos los workers reutilizan los
+            #      mismos transforms (mel, mfcc) sin duplicarlos.
+            n_workers = self.config.num_workers or min(8, (os.cpu_count() or 4))
+            print(f"⚡ Modo paralelo: {n_workers} workers (ThreadPoolExecutor)")
+
+            rows = [row for _, row in incoming.iterrows()]
+            futures = {}
+
+            with ThreadPoolExecutor(max_workers=n_workers) as executor:
+                for row in rows:
+                    future = executor.submit(self.process_single_audio, row, cols)
+                    futures[future] = row
+
+                with tqdm(total=len(rows), desc="Procesando audios") as pbar:
+                    for future in as_completed(futures):
+                        processed = future.result()
+                        if processed is not None:
+                            results.append(processed)
+                        pbar.update(1)
+        else:
+            # ── Modo secuencial (comportamiento original) ─────────────────
+            for _, row in tqdm(incoming.iterrows(), total=len(incoming), desc="Procesando audios"):
+                processed = self.process_single_audio(row, cols)
+                if processed is not None:
+                    results.append(processed)
 
         df_new = pd.DataFrame(results)
 
@@ -569,6 +721,7 @@ class Preprocess:
     def process_audio_file(
         self,
         audio_path: PathLike,
+        augment_inference: Optional[bool] = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Procesa un único archivo de audio y devuelve (mel, mfcc) listos para inferencia.
@@ -582,6 +735,10 @@ class Preprocess:
         ----------
         audio_path : str | Path
             Ruta al archivo de audio (.wav, .mp3, …).
+        augment_inference : bool | None
+            Si True, aplica aumentaciones de dominio (ruido, EQ telefónico, reverb)
+            para acercar audios limpios externos al dominio de entrenamiento.
+            Si None, usa el valor de ``config.augment_inference``.
 
         Returns
         -------
@@ -591,6 +748,8 @@ class Preprocess:
         path = Path(audio_path)
         if not path.exists():
             raise FileNotFoundError(f"Audio no encontrado: {path}")
+
+        apply_aug = augment_inference if augment_inference is not None else self.config.augment_inference
 
         audio_np, sr = sf.read(str(path))
 
@@ -610,6 +769,9 @@ class Preprocess:
         waveform = self._fix_length(waveform)
         waveform = self._normalize_peak(waveform)
 
+        if apply_aug:
+            waveform = self._augment_for_inference(waveform)
+
         with torch.inference_mode():
             mel  = self.amplitude_to_db(self.mel_transform(waveform))  # [1, n_mels, T]
             mfcc = self.mfcc_transform(waveform)                        # [1, n_mfcc, T]
@@ -625,17 +787,19 @@ def main():
     csv_paths = [RAW_DIR / f for f in csv_filenames]
 
     config = PreprocessConfig(
-        sample_rate=44100,
-        target_duration=5.0,
+        sample_rate=16000,        # ↓ de 44100 → 3.3× menos carga GPU
+        target_duration=3.0,      # ↓ de 5.0 s → la mayoría de eventos ocurren en < 3 s
         augment=False,
-        save_audio=True,
+        save_audio=False,
         output_audio_subtype="PCM_16",
         output_audio_format="WAV",
+        n_fft=1024,               # ↓ de 2048, proporcional al nuevo sr
+        hop_length=160,           # ↓ de 512,  mantiene la misma resolución temporal relativa
         n_mels=128,
         n_mfcc=13,
-        save_waveform=False,
+        save_waveform=True,       # guardar waveform .npy para modo mel+waveform
         save_mel=True,
-        save_mfcc=True,
+        save_mfcc=False,
         use_multiprocessing=True,
     )
 

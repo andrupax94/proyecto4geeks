@@ -1,5 +1,5 @@
 canonical,alertable,emergency
-instrument,False,False
+instrument_music,False,False
 another_animal,False,False
 dog,True,False
 voice,False,False
@@ -17,9 +17,9 @@ water,False,False
 weather,False,False
 fire,True,True
 gun_explosion,True,True
-machine,False,False
 engine,False,False
 ambient_noise,False,False
 human_activity,False,False
 impact_rattle,False,False
 breathing,False,False
+movement,False,False

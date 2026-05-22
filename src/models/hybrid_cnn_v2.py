@@ -72,7 +72,7 @@ class ImprovedMFCCCNN(nn.Module):
         dropout: float = 0.25,
         mode: str = "mel_only",
     ):
-        if mode not in ("mel_only", "mfcc_only", "mel_mfcc"):
+        if mode not in ("mel_only", "mfcc_only", "mel_mfcc","mel_waveform"):
             raise ValueError(f"mode debe ser 'mel_only', 'mfcc_only' o 'mel_mfcc'. Recibido: {mode!r}")
 
         super().__init__()

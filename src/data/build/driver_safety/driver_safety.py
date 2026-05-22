@@ -54,17 +54,17 @@ if __name__ == "__main__":
         audio_salida = RAW_DIR / dataset_name / val[1]
         os.makedirs(carpeta_audio, exist_ok=True)
         val[0] = val[1]+".csv"
-        print("-------------Iniciando corte de audios------------")
-        extraer_eventos(
-            carpeta_audio=carpeta_audio,
-            df=df_filtrado,
-            col_file="filename",
-            col_onset="onset",
-            col_offset="offset",
-            col_label="event_label",
-            carpeta_salida=audio_salida,
-            csv_salida_path=script_dir / val[0]
-        )
+        # print("-------------Iniciando corte de audios------------")
+        # extraer_eventos(
+        #     carpeta_audio=carpeta_audio,
+        #     df=df_filtrado,
+        #     col_file="filename",
+        #     col_onset="onset",
+        #     col_offset="offset",
+        #     col_label="event_label",
+        #     carpeta_salida=audio_salida,
+        #     csv_salida_path=script_dir / val[0]
+        # )
         df_filtrado = pd.read_csv(os.path.join(script_dir, val[0]))
         print("-------------Generando CSV audios------------")
         df_res[key] = Dataset.generar_csv_audio(

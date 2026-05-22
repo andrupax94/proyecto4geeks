@@ -33,7 +33,9 @@ AUDIOSET_BUILD_DIR = BUILD_DIR / "AudioSet"
 AUDIOSET_SONIDOS_DIR = AUDIOSET_BUILD_DIR / "sonidos"
 
 SINONIMOS_V3_PATH = BUILD_DIR / "sinonimosV3.csv"
+SINONIMOS_V3_PATH = BUILD_DIR / "sinonimosV5.csv"
 CANONICAL_CLASSES_PATH = BUILD_DIR / "canonical_clases.csv"
+CANONICAL_CLASSES_PATHV3 = BUILD_DIR / "canonical_clases3.csv"
 
 AUDIOSET_DATASET_PATH = RAW_DIR / "audioset.csv"
 
@@ -53,6 +55,7 @@ LABEL_MAPPING = {
     "alertable2": INTERIM_DIR / "processed_dataset" / "label_mapping_alertableV2.pkl",
     "emergency2": INTERIM_DIR / "processed_dataset" / "label_mapping_emergencyV2.pkl",
     "total2": INTERIM_DIR / "processed_dataset" / "label_mapping_totalV2.pkl",
+    "human_label_no_alertable2": INTERIM_DIR / "processed_dataset" / "label_mapping_human_no_alertableV2.pkl",
 }
 PROCESSED_METADATA = {
     "1":ESPECTOGRAMS_DIR / "processed_metadata.csv",

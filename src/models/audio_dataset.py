@@ -50,10 +50,12 @@ class ProcessedAudioDataset(Dataset):
         split: Optional[str] = None,
         use_mfcc: bool = True,
         use_scalars: bool = True,
+        use_waveform: bool = True,  # ⬇️ NUEVO
         target_frames: Optional[int] = None,
         scalar_columns: Optional[Sequence[str]] = None,
         mel_column_candidates: Sequence[str] = ("mel_spec_path", "mel_path"),
         mfcc_column_candidates: Sequence[str] = ("mfcc_path",),
+        waveform_column_candidates: Sequence[str] = ("audio_normalized_path", "waveform_path"),  # ⬇️ NUEVO
         target_column: str = "human_label",
         mapping_mode: Optional[str] = None,  # "total" | "human" | "alertable" | "emergency"
     ) -> None:
@@ -106,10 +108,12 @@ class ProcessedAudioDataset(Dataset):
 
         self.use_mfcc = use_mfcc
         self.use_scalars = use_scalars
+        self.use_waveform = use_waveform  # ⬇️ NUEVO
         self.scalar_columns = list(scalar_columns or DEFAULT_SCALAR_COLUMNS)
 
         self.mel_column = self._resolve_existing_column(self.df.columns, mel_column_candidates)
         self.mfcc_column = self._resolve_existing_column(self.df.columns, mfcc_column_candidates, required=False)
+        self.waveform_column = self._resolve_existing_column(self.df.columns, waveform_column_candidates, required=False)  # ⬇️ NUEVO
 
         self.available_scalar_columns = [c for c in self.scalar_columns if c in self.df.columns]
 
@@ -119,6 +123,7 @@ class ProcessedAudioDataset(Dataset):
         # 🔥 OPTIMIZACIÓN: Inferir dimensiones sin loops iterrows
         self.target_frames = target_frames or self._infer_target_frames_fast()
         self.mel_bins, self.mfcc_bins = self._infer_feature_bins_fast()
+        self.waveform_samples = self._infer_waveform_samples_fast() if self.use_waveform and self.waveform_column else None  # ⬇️ NUEVO
 
     @staticmethod
     def _extract_label_mapping(payload: Any) -> Dict[Any, int]:
@@ -257,7 +262,7 @@ class ProcessedAudioDataset(Dataset):
     def _normalize_dataframe_paths(self) -> None:
         project_root = Path.cwd().resolve()
 
-        for col in [self.mel_column, self.mfcc_column, "audio_normalized_path"]:
+        for col in [self.mel_column, self.mfcc_column, self.waveform_column, "audio_normalized_path"]:
             if col is not None and col in self.df.columns:
                 # 🔥 OPTIMIZACIÓN: Usar apply vectorizado, más rápido que iterrows
                 self.df[col] = self.df[col].apply(
@@ -339,6 +344,28 @@ class ProcessedAudioDataset(Dataset):
 
         return mel_bins, mfcc_bins
 
+    def _infer_waveform_samples_fast(self) -> Optional[int]:
+        """
+        🔥 NUEVO: Inferir número de samples en waveform.
+        """
+        if not self.use_waveform or self.waveform_column is None:
+            return None
+
+        for waveform_path in self.df[self.waveform_column]:
+            if isinstance(waveform_path, str) and Path(waveform_path).exists():
+                try:
+                    shape, _ = self._load_npy_header(waveform_path)
+                    # Waveform es 1D: (num_samples,)
+                    if len(shape) == 1:
+                        return int(shape[0])
+                    # O 2D: (1, num_samples) o (num_samples, 1)
+                    elif len(shape) == 2:
+                        return int(shape[-1]) if shape[0] == 1 else int(shape[0])
+                except Exception:
+                    continue
+
+        return None
+
     @staticmethod
     def _load_npy(path: str | Path) -> np.ndarray:
         """
@@ -368,6 +395,20 @@ class ProcessedAudioDataset(Dataset):
             arr = np.pad(arr, ((0, 0), (0, pad)), mode="constant")
 
         return arr.astype(np.float32)
+
+    def _fix_waveform_length(self, waveform: np.ndarray, target_samples: int) -> np.ndarray:
+        """
+        🔥 NUEVO: Ajusta la longitud del waveform a target_samples.
+        """
+        waveform = waveform.flatten()  # Asegurar 1D
+        
+        if len(waveform) > target_samples:
+            waveform = waveform[:target_samples]
+        elif len(waveform) < target_samples:
+            pad = target_samples - len(waveform)
+            waveform = np.pad(waveform, (0, pad), mode="constant")
+
+        return waveform.astype(np.float32)
 
     def _load_label(self, row: pd.Series) -> int:
         raw = row.get(self.target_column)
@@ -434,6 +475,20 @@ class ProcessedAudioDataset(Dataset):
             except Exception:
                 pass  # Saltarse si el archivo no existe
 
+        # 🔥 NUEVO: Cargar waveform si existe y se solicita
+        if (
+            self.use_waveform
+            and self.waveform_column is not None
+            and pd.notna(row.get(self.waveform_column))
+            and self.waveform_samples is not None
+        ):
+            try:
+                waveform = self._load_npy(row[self.waveform_column])
+                waveform = self._fix_waveform_length(waveform, self.waveform_samples)
+                sample["waveform"] = torch.from_numpy(waveform).unsqueeze(0)
+            except Exception:
+                pass  # Saltarse si el archivo no existe
+
         # 🔥 OPTIMIZACIÓN: Escalares solo si se usan
         if self.use_scalars and self.available_scalar_columns:
             sample["scalars"] = torch.tensor(
@@ -447,6 +502,7 @@ class ProcessedAudioDataset(Dataset):
 def crnn_collate_fn(batch):
     """
     🔥 OPTIMIZACIÓN: Collate function eficiente sin operaciones innecesarias.
+    Maneja mel, mfcc, waveform y scalars.
     """
     mel = torch.stack([b["mel"] for b in batch])
 
@@ -454,6 +510,10 @@ def crnn_collate_fn(batch):
 
     if "mfcc" in batch[0]:
         out["mfcc"] = torch.stack([b["mfcc"] for b in batch])
+
+    # 🔥 NUEVO: Manejo de waveform
+    if "waveform" in batch[0]:
+        out["waveform"] = torch.stack([b["waveform"] for b in batch])
 
     if "scalars" in batch[0]:
         out["scalars"] = torch.stack([b["scalars"] for b in batch])
