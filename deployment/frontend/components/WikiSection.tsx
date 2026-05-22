@@ -1,5 +1,4 @@
 "use client";
-var hola = "hola como estas"
 const wikiContent = [
   {
     title: "¿Qué es MIVIA?",
@@ -38,11 +37,8 @@ export default function WikiSection() {
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-gray-800">Wiki del Proyecto</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <h1>{hola}</h1>
         {wikiContent.map((item) => (
-
           <div key={item.title} className="bg-white rounded-xl shadow p-5">
-
             <h3 className="text-base font-semibold text-blue-700 mb-2">{item.title}</h3>
             <p className="text-sm text-gray-600 leading-relaxed">{item.content}</p>
           </div>
