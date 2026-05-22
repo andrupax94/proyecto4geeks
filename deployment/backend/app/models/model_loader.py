@@ -13,8 +13,8 @@ from src.models.hybrid_cnn_v3 import ImprovedMFCCCNN
 MODEL_PATH = BASE_DIR / "models" / "final" / "best_alertable_v3.pt"
 
 device = torch.device("cpu")
-
-mode = "mel_waveform"
+model=None
+"""mode = "mel_waveform"
 NUM_CLASSES = 2
 
 model = ImprovedMFCCCNN(

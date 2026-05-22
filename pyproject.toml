@@ -21,6 +21,10 @@ dependencies = [
   "tqdm>=4.65",
   "datasets>=2.0"
 ]
-
 [tool.setuptools]
-packages = ["src"]
+packages = [
+    "src", "app"
+]
+[tool.setuptools.package-dir]
+"" = "."
+app = "deployment/backend/app"

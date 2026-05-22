@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "frontend": "npm --prefix deployment/frontend run dev"
+  }
+}
