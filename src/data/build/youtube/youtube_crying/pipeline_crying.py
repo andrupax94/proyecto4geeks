@@ -206,7 +206,7 @@ if __name__ == "__main__":
     clips = segment_audio(RAW_DIR, PROCESSED_DIR, CLIP_DURATION, ENERGY_THRESHOLD)
 
     if not clips:
-        print("\n⚠ No se generaron clips. Revisa las URLs o el umbral de energía.")
+        print("\nNo se generaron clips. Revisa las URLs o el umbral de energía.")
         sys.exit(1)
 
     # Paso 3: Extraer features → crying.csv
