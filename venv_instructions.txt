@@ -4,4 +4,4 @@ pip install -e .
 pip install ipykernel
 python -m ipykernel install --user --name proyecto4geeks --display-name "Python (proyecto4geeks)"
 uvicorn deployment.backend.app.main:app --reload
-npm run dev
+npm run frontend
