@@ -6,7 +6,7 @@ MODEL_PATH = "models/final/model_total_V4_32.pt"
 
 device = torch.device("cpu")
 
-model = ImprovedMFCCCNN()
+"""model = ImprovedMFCCCNN()
 
 checkpoint = torch.load(
     MODEL_PATH,
@@ -15,4 +15,4 @@ checkpoint = torch.load(
 
 model.load_state_dict(checkpoint)
 
-model.eval()
+model.eval()"""
