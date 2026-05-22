@@ -26,7 +26,7 @@ class CFG:
     lr = 2e-4
     weight_decay = 2e-4
     dropout = 0.30
-    epochs = 26
+    epochs = 30
     num_workers = 6
 
     # ─────────────────────────────────────────────────────────
@@ -36,10 +36,10 @@ class CFG:
     use_scalars = False
     seed = 42
     print_every = 50
-    target_type = "human_label"
+    target_type = "no_alertable"
     mode = "mel_waveform"
     label_version = 2
-    version = 6
+    version = 4
     checkpoint_dir = CHECKPOINT_DIR / f"{target_type}_V{version}"
 
     # ─────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ class CFG:
     # ─────────────────────────────────────────────────────────
     # FOCUS CLASSES
     # ─────────────────────────────────────────────────────────
-    focus_classes: list = ["fire"]
+    focus_classes: list = ["impact_rattle","movement"]
     focus_loss_weight: float = 3
     focus_oversample_factor: float = 2
 

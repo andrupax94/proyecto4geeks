@@ -1,0 +1,18 @@
+filename,prediction,confidence,prob_instrument_music,prob_notifications,prob_another_animal,prob_domestic_activity,prob_engine,prob_impact_rattle,prob_human_activity,prob_breathing,prob_weather,prob_voice,prob_doors,prob_ambient_noise,prob_movement,prob_water
+Alesis-Fusion-Clean-Guitar-C3.wav,instrument_music,0.8442060351371765,0.8442,0.1023,0.0117,0.0089,0.0082,,,,,,,,,
+Alesis-Fusion-Steel-String-Guitar-C4.wav,instrument_music,0.9302816390991211,0.9303,0.0583,,0.0011,,0.0082,0.0006,,,,,,,
+Bowed-Bass-C2.wav,engine,0.7162932753562927,,0.0059,0.0172,0.1987,0.7163,0.051,,,,,,,,
+cat1.wav,another_animal,0.988598108291626,,,0.9886,0.0022,,,0.0014,0.0029,0.0015,,,,,
+cat10.wav,instrument_music,0.9378763437271118,0.9379,0.0016,0.0121,,,,0.0458,,,0.0019,,,,
+distant-woman-talks-of-love-in-russian-echoing.wav,voice,0.7520375847816467,0.0994,,0.0342,0.0042,,,0.0941,,,0.752,,,,
+dragon-studio-door-opening-454242.mp3,doors,0.2417958527803421,,,,0.1792,,0.1547,,0.0862,,,0.2418,0.0878,,
+dragon-studio-footsteps-on-the-nature-trail-419017.mp3,movement,0.35102882981300354,,,,0.1328,,0.1848,,,,0.0499,,,0.351,0.1352
+dragon-studio-heavy-door-unlocking-515258 (1).mp3,doors,0.5060868859291077,,,,0.1034,,0.0925,,,,,0.5061,0.069,,0.0518
+dragon-studio-heavy-door-unlocking-515258.mp3,domestic_activity,0.3396178185939789,,,0.068,0.3396,,0.2023,,,,,0.1759,,,0.0822
+dragon-studio-open-door-stock-sfx-454246 (1).mp3,human_activity,0.17524060606956482,0.1386,,,0.1612,0.0687,0.1012,0.1752,,,,,,,
+dragon-studio-open-door-stock-sfx-454246.mp3,domestic_activity,0.47305479645729065,,,0.0282,0.4731,,0.0639,,,,,0.3642,,0.0206,
+freesound_community-print-shop-printer-3-23680.mp3,engine,0.21391896903514862,,,0.1452,,0.2139,,0.2077,,0.091,0.0935,,,,
+messenger-notification.wav,notifications,0.40768110752105713,0.198,0.4077,,,,0.1287,,,0.0338,,,0.104,,
+people-talking-foley_140bpm.wav,human_activity,0.6868798136711121,0.0443,,0.0264,,,,0.6869,,,0.213,,0.0062,,
+royalty_free_music-soft-piano-100-bpm-121529.mp3,instrument_music,0.7146663069725037,0.7147,0.1608,,0.0225,,0.0257,0.0196,,,,,,,
+success-notification_C_major.wav,notifications,0.9103785157203674,0.0823,0.9104,0.0016,,,,0.0019,,,,,0.0016,,
