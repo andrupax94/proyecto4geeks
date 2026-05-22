@@ -20,11 +20,11 @@ import sys
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-URLS_FILE       = Path("./crying_urls.txt")
-RAW_DIR         = Path("./crying_raw")
-PROCESSED_DIR   = Path("./crying_processed")
-OUTPUT_CSV      = Path("./crying.csv")
-UNIFIED_CSV     = Path("./unified_dataset.csv")
+URLS_FILE       = Path("src/data/build/youtube/youtube_crying/crying_urls.txt")
+RAW_DIR         = Path("src/data/build/youtube/youtube_crying/crying_raw")
+PROCESSED_DIR   = Path("src/data/build/youtube/youtube_crying/crying_processed")
+OUTPUT_CSV      = Path("src/data/build/youtube/youtube_crying/crying.csv")
+UNIFIED_CSV     = Path("src/data/build/youtube/youtube_crying/unified_dataset.csv")
 
 CLIP_DURATION       = 5     # segundos
 ENERGY_THRESHOLD    = 0.001 # igual que el script (ajustable)
