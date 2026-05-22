@@ -5,7 +5,7 @@ from src.models.hybrid_cnn_v3 import ImprovedMFCCCNN
 MODEL_PATH = "models/final/model_total_V4_32.pt"
 
 device = torch.device("cpu")
-
+model=None
 """mode = "mel_waveform"
 NUM_CLASSES = 2
 
