@@ -7,11 +7,15 @@ import AudioTable from "@/components/AudioTable";
 import ModelMetrics from "@/components/ModelMetrics";
 import WikiSection from "@/components/WikiSection";
 import MobileView from "@/components/MobileView";
+import DistributionChart from "@/components/DistributionChart";
+import EDASelector from "@/components/EDASelector";
+import AnimatedChart from "@/components/AnimatedChart";
 import { predictAudio, getStats, getEDA } from "@/services/api";
 import { PredictionResponse, DashboardStats, EDAData } from "@/types";
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [activeChart, setActiveChart] = useState("alertable");
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [edaData, setEdaData] = useState<EDAData | null>(null);
   const [predictions, setPredictions] = useState<PredictionResponse[]>([]);
@@ -53,6 +57,90 @@ export default function Home() {
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) handleFile(file);
+  };
+
+  const renderEDAChart = () => {
+    if (!edaData) return <div className="text-gray-400 text-sm p-10 text-center">Cargando datos del dataset...</div>;
+
+    switch (activeChart) {
+      case "alertable":
+        return (
+          <AnimatedChart isVisible={activeChart === "alertable"}>
+            <EDAChart
+              data={edaData.alertable || []}
+              title="Distribución de Clases Alertables"
+              color="#ef4444"
+            />
+          </AnimatedChart>
+        );
+      case "no_alertable":
+        return (
+          <AnimatedChart isVisible={activeChart === "no_alertable"}>
+            <EDAChart
+              data={edaData.no_alertable || []}
+              title="Distribución de Clases No Alertables"
+              color="#3b82f6"
+            />
+          </AnimatedChart>
+        );
+      case "source":
+        return (
+          <AnimatedChart isVisible={activeChart === "source"}>
+            <DistributionChart
+              data={(edaData.dataset_source_distribution || []).map(item => ({ name: item.source, value: item.count }))}
+              title="Distribución por Fuente de Datos"
+              dataKeyName="name"
+              dataKeyValue="value"
+              color="#f59e0b"
+            />
+          </AnimatedChart>
+        );
+      case "format":
+        return (
+          <AnimatedChart isVisible={activeChart === "format"}>
+            <DistributionChart
+              data={(edaData.audio_format_distribution || []).map(item => ({ name: item.format, value: item.count }))}
+              title="Distribución por Formato de Audio"
+              dataKeyName="name"
+              dataKeyValue="value"
+              color="#10b981"
+            />
+          </AnimatedChart>
+        );
+      case "duration":
+        return (
+          <AnimatedChart isVisible={activeChart === "duration"}>
+            <div className="bg-white rounded-xl shadow p-5">
+              <h3 className="text-base font-semibold text-gray-700 mb-6">Estadísticas de Duración de Audios (segundos)</h3>
+              {edaData.duration_stats ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <DashboardCard title="Media" value={edaData.duration_stats.mean.toFixed(2)} subtitle="segundos" color="purple" />
+                  <DashboardCard title="Mediana" value={edaData.duration_stats.median.toFixed(2)} subtitle="segundos" color="purple" />
+                  <DashboardCard title="Máxima" value={edaData.duration_stats.max.toFixed(2)} subtitle="segundos" color="purple" />
+                  <DashboardCard title="Mínima" value={edaData.duration_stats.min.toFixed(2)} subtitle="segundos" color="purple" />
+                  <DashboardCard title="Desv. Est." value={edaData.duration_stats.std.toFixed(2)} subtitle="segundos" color="purple" />
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No hay datos de duración disponibles.</p>
+              )}
+            </div>
+          </AnimatedChart>
+        );
+      case "sample_rate":
+        return (
+          <AnimatedChart isVisible={activeChart === "sample_rate"}>
+            <DistributionChart
+              data={(edaData.sample_rate_distribution || []).map(item => ({ name: `${item.rate / 1000} kHz`, value: item.count }))}
+              title="Distribución por Frecuencia de Muestreo"
+              dataKeyName="name"
+              dataKeyValue="value"
+              color="#6366f1"
+            />
+          </AnimatedChart>
+        );
+      default:
+        return null;
+    }
   };
 
   const renderSection = () => {
@@ -213,22 +301,8 @@ export default function Home() {
         return (
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-800">Análisis Exploratorio de Datos (EDA)</h2>
-            {edaData ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <EDAChart
-                  data={edaData.alertable}
-                  title="Distribución de Clases Alertables"
-                  color="#ef4444"
-                />
-                <EDAChart
-                  data={edaData.no_alertable}
-                  title="Distribución de Clases No Alertables"
-                  color="#3b82f6"
-                />
-              </div>
-            ) : (
-              <div className="text-gray-400 text-sm">Cargando datos EDA...</div>
-            )}
+            <EDASelector activeChart={activeChart} onChartChange={setActiveChart} />
+            {renderEDAChart()}
           </div>
         );
 

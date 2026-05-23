@@ -29,7 +29,34 @@ export interface ClassDistributionItem {
   count: number;
 }
 
+export interface SourceDistributionItem {
+  source: string;
+  count: number;
+}
+
+export interface FormatDistributionItem {
+  format: string;
+  count: number;
+}
+
+export interface SampleRateDistributionItem {
+  rate: number;
+  count: number;
+}
+
+export interface DurationStats {
+  mean: number;
+  median: number;
+  min: number;
+  max: number;
+  std: number;
+}
+
 export interface EDAData {
   alertable: ClassDistributionItem[];
   no_alertable: ClassDistributionItem[];
+  dataset_source_distribution: SourceDistributionItem[];
+  audio_format_distribution: FormatDistributionItem[];
+  duration_stats: DurationStats;
+  sample_rate_distribution: SampleRateDistributionItem[];
 }

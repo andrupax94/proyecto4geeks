@@ -44,5 +44,42 @@ def eda():
             {"class": "engine", "count": 2217},
             {"class": "doors", "count": 1474},
             {"class": "machine", "count": 1087}
+        ],
+        "dataset_source_distribution": [
+            {"source": "zenodo", "count": 51197},
+            {"source": "driver_safety", "count": 47726},
+            {"source": "VOICe", "count": 9843},
+            {"source": "Enhanced_audio_of_accident", "count": 9039},
+            {"source": "UrbanSound8k", "count": 8732},
+            {"source": "emergencysound", "count": 965},
+            {"source": "Guns_DS", "count": 851},
+            {"source": "youtube", "count": 596},
+            {"source": "ESC50", "count": 360},
+            {"source": "audioset", "count": 131}
+        ],
+        "audio_format_distribution": [
+            {"format": "wav", "count": 126686},
+            {"format": "wavex", "count": 2753}
+        ],
+        "duration_stats": {
+            "mean": 4.85776651550151,
+            "median": 2.975,
+            "min": 0.025,
+            "max": 550.249,
+            "std": 7.022001802693392
+        },
+        "sample_rate_distribution": [
+            {"rate": 44100.0, "count": 76147},
+            {"rate": 16000.0, "count": 48367},
+            {"rate": 48000.0, "count": 4099},
+            {"rate": 96000.0, "count": 620},
+            {"rate": 24000.0, "count": 82},
+            {"rate": 22050.0, "count": 45},
+            {"rate": 11025.0, "count": 39},
+            {"rate": 192000.0, "count": 17},
+            {"rate": 8000.0, "count": 12},
+            {"rate": 11024.0, "count": 7},
+            {"rate": 32000.0, "count": 4}
         ]
     }
+
