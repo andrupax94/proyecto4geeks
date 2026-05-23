@@ -6,6 +6,7 @@ import EDAChart from "@/components/EDAChart";
 import AudioTable from "@/components/AudioTable";
 import ModelMetrics from "@/components/ModelMetrics";
 import WikiSection from "@/components/WikiSection";
+import EDAS from "@/components/EDAS";
 import MobileView from "@/components/MobileView";
 import { predictAudio, getStats, getEDA } from "@/services/api";
 import { PredictionResponse, DashboardStats, EDAData } from "@/types";
@@ -237,6 +238,9 @@ export default function Home() {
 
       case "wiki":
         return <WikiSection />;
+
+      case "edas":
+        return <EDAS />;
 
       default:
         return null;

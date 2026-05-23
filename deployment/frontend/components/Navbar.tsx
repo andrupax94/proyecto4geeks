@@ -13,6 +13,7 @@ export default function Navbar() {
         <Link href="#predict" className="hover:text-blue-400 transition-colors">Predicción</Link>
         <Link href="#eda" className="hover:text-blue-400 transition-colors">EDA</Link>
         <Link href="#wiki" className="hover:text-blue-400 transition-colors">Wiki</Link>
+        <Link href="#edas" className="hover:text-blue-400 transition-colors">EDAs</Link>
       </div>
     </nav>
   );
