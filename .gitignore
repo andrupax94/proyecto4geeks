@@ -88,37 +88,7 @@ Thumbs.db
 *.zip
 *.7z
 
-<<<<<<< HEAD
 # =========================================================
-=======
-# =========================
-# Audio datasets
-# =========================
-*.wav
-!tests/audios/**/*.wav
-*.m4a
-*.webm
-
-# Dataset folders
-desktop.ini
-!data/raw/*.csv
-**/sonidos/
-
-# =========================
-# NumPy / ML artifacts
-# =========================
-*.npy
-
-# Model checkpoints
-models/checkpoints/
-
-# LLM / model binaries
-# =========================
-*.gguf
-model-*.bin
-
-# =========================
->>>>>>> ec4a55f7e375964c4c1fa1363ec30713ccf1083a
 # Sensitive config
 # =========================================================
 .env
