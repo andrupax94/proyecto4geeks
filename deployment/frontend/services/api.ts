@@ -1,9 +1,10 @@
 import { PredictionResponse, DashboardStats, EDAData } from "@/types";
 
-// En producción, configurar NEXT_PUBLIC_API_URL en .env.local
-// En desarrollo local: http://127.0.0.1:8000
-// En el sandbox público: usar la URL expuesta del backend
-const API_URL = "http://127.0.0.1:8000";
+// Selección automática del backend según entorno
+const API_URL =
+  process.env.NODE_ENV === "development"
+    ? process.env.LOCALAPI || "http://127.0.0.1:8000"
+    : process.env.HTTPAPI || "http://andreseduardo.ddns.net:8000";
 
 export async function predictAudio(formData: FormData): Promise<PredictionResponse> {
   const response = await fetch(`${API_URL}/predict`, {
