@@ -47,6 +47,14 @@ const EDAs = [
     title: "FSD50K",
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.2_EDA_FSD50K.ipynb",
   },
+    {
+    title: "ESC-50",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.3_EDA_ESC_50.ipynb",
+  },
+      {
+    title: "ESC-50",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.3_EDA_ESC_50.ipynb",
+  },
 ];
 
 export default function WikiSection() {
