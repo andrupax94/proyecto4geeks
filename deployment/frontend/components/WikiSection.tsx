@@ -43,6 +43,10 @@ const EDAs = [
     title: "UrbanSound8K",
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.1_EDA_UrbanSound8K.ipynb",
   },
+    {
+    title: "FSD50K",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.2_EDA_FSD50K.ipynb",
+  },
 ];
 
 export default function WikiSection() {
