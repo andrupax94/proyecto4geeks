@@ -71,7 +71,7 @@ Thumbs.db
 *.webm
 
 # Dataset folders
-data/raw/
+desktop.ini
 !data/raw/*.csv
 **/sonidos/
 
