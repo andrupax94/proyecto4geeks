@@ -21,7 +21,7 @@ def eda():
         "alertable": [
             {"class": "traffic", "count": 17581},
             {"class": "alert_sirem", "count": 10023},
-            {"class": "glass_metal", "count": 7540},
+            {"class": "glass_metal", "count": 754},
             {"class": "gun_shot", "count": 6436},
             {"class": "crying", "count": 6220},
             {"class": "dog", "count": 4600},
