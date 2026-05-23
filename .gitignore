@@ -72,6 +72,7 @@ Thumbs.db
 
 # Dataset folders
 data/raw/
+!data/raw/*.csv
 **/sonidos/
 
 # =========================
