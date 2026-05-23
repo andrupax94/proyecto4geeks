@@ -2,7 +2,14 @@
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
-
+import colors, {
+  LIGHT_COLORS,
+  DARK_COLORS,
+  getColor,
+  getThemeColors,
+  hexToRgba,
+  COLOR_PALETTES,
+} from '@/services/colors';
 interface DistributionChartProps {
   data: { name: string; value: number }[];
   title: string;
@@ -18,7 +25,7 @@ export default function DistributionChart({
   dataKeyValue,
   color = "#3b82f6",
 }: DistributionChartProps) {
-  
+
   // Validar si hay datos para evitar renderizar un gráfico vacío
   if (!data || data.length === 0) {
     return (
@@ -37,9 +44,9 @@ export default function DistributionChart({
       <h3 className="text-base font-semibold text-gray-700 mb-4">{title}</h3>
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={sortedData} 
-            layout="vertical" 
+          <BarChart
+            data={sortedData}
+            layout="vertical"
             margin={{ left: 30, right: 30, top: 5, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
@@ -48,7 +55,7 @@ export default function DistributionChart({
               dataKey={dataKeyName}
               type="category"
               width={120}
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: DARK_COLORS.primaryDark }}
               axisLine={false}
               tickLine={false}
             />

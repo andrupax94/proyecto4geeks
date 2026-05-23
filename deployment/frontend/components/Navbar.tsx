@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
-
+import colors, {
+  DARK_COLORS
+} from '@/services/colors';
 export default function Navbar() {
   return (
-    <nav className="bg-gray-900 text-white px-6 py-3 flex items-center justify-between shadow-md">
+    <nav style={{ backgroundColor: DARK_COLORS.primary }} className="bg-gray-900 text-white px-6 py-3 flex items-center justify-between shadow-md">
       <div className="flex items-center gap-3">
         <span className="text-2xl font-bold text-blue-400">MIVIA</span>
         <span className="text-sm text-gray-400">Sistema de Detección de Sonidos</span>
