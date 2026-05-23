@@ -43,17 +43,49 @@ const EDAs = [
     title: "UrbanSound8K",
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.1_EDA_UrbanSound8K.ipynb",
   },
-    {
+  {
     title: "FSD50K",
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.2_EDA_FSD50K.ipynb",
   },
-    {
+  {
     title: "ESC-50",
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.3_EDA_ESC_50.ipynb",
   },
-      {
-    title: "ESC-50",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.3_EDA_ESC_50.ipynb",
+  {
+    title: "AudioSet",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.4_EDA_AudioSet.ipynb",
+  },
+  {
+    title: "Gunshot-audio-dataset",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.5_EDA_gunshot_audio_dataset.ipynb",
+  },
+  {
+    title: "VOICe Dataset",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.6_EDA_VOICe%20(corregido).ipynb",
+  },
+  {
+    title: "Sound Event Detection for Driver Safety",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.7_EDA_Sound_Event_Detection_for_Driver_Safety.ipynb",
+  },
+  {
+    title: "Emergencysound",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.8_EDA_emergencysound.ipynb",
+  },
+  {
+    title: "Enhanced audio of accident and crime detection",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.9_EDA_Enhanced_audio_of_accident_and_crime_detection.ipynb",
+  },
+  {
+    title: "Emergency Vehicle Siren Sounds",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.10_EDA_Emergency_Vehicle_Siren_Sounds.ipynb",
+  },
+  {
+    title: "Vídeos varios (YouTube)",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.11_EDA_youtube.ipynb",
+  },
+  {
+    title: "Edge-collected-gunshot dataset (CSV)",
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.12%20EDA_Edge_collected_gunshot.ipynb",
   },
 ];
 
