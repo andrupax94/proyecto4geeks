@@ -1,5 +1,10 @@
 {
   "scripts": {
-    "frontend": "npm --prefix deployment/frontend run dev"
+    "dev": "npm --prefix deployment/frontend run dev",
+    "dev:host": "npm --prefix deployment/frontend run dev -- --hostname 0.0.0.0 --port 3000",
+
+    "build": "npm --prefix deployment/frontend run build",
+
+    "start": "npm --prefix deployment/frontend run start -- -p 80"
   }
 }
