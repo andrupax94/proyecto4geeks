@@ -7,6 +7,7 @@ import AudioTable from "@/components/AudioTable";
 import ModelMetrics from "@/components/ModelMetrics";
 import WikiSection from "@/components/WikiSection";
 import EDAS from "@/components/EDAS";
+import Preprocessing from "@/components/Preprocessing";
 import MobileView from "@/components/MobileView";
 import { predictAudio, getStats, getEDA } from "@/services/api";
 import { PredictionResponse, DashboardStats, EDAData } from "@/types";
@@ -61,7 +62,7 @@ export default function Home() {
       case "dashboard":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-800">Dashboard General</h2>
+            <h2 className="text-xl font-bold text-gray-800">Dashboard</h2>
             {stats ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <DashboardCard
@@ -99,7 +100,7 @@ export default function Home() {
             {/* Historial de predicciones */}
             <div className="bg-white rounded-xl shadow p-5">
               <h3 className="text-base font-semibold text-gray-700 mb-4">
-                Historial de Predicciones
+                Historial de predicciones
               </h3>
               <AudioTable predictions={predictions} />
             </div>
@@ -241,6 +242,9 @@ export default function Home() {
 
       case "edas":
         return <EDAS />;
+
+      case "preprocesado-y-modelado":
+        return <Preprocessing />;
 
       default:
         return null;
