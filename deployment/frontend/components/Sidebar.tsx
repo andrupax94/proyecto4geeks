@@ -12,6 +12,7 @@ const sections = [
   { id: "eda", label: "Análisis EDA", icon: "📈" },
   { id: "metrics", label: "Métricas del Modelo", icon: "🧠" },
   { id: "wiki", label: "Wiki del Proyecto", icon: "📚" },
+  { id: "edas", label: "EDAs", icon: "📊" },
 ];
 
 export default function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
