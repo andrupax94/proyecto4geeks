@@ -96,7 +96,7 @@ const finalDatasetEDAs = [
   },
   {
     title: "EDA acústico",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/02.2_EDA_acustico.ipynb"
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/02.2_EDA_ac%C3%BAstico.ipynb"
   },
   {
     title: "EDA sampling alternativo",
