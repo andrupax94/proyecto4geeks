@@ -11,10 +11,10 @@ const sections = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
   { id: "predict", label: "Predicción", icon: "🎙️" },
   { id: "eda", label: "Análisis EDA", icon: "📈" },
-  { id: "metrics", label: "Métricas del Modelo", icon: "🧠" },
+  { id: "metrics", label: "Métricas del modelo", icon: "🧠" },
   {
     id: "wiki",
-    label: "Wiki del Proyecto",
+    label: "Wiki del proyecto",
     icon: "📚",
     subSections: [
       { id: "wiki", label: "Acerca de", icon: "ℹ️" },

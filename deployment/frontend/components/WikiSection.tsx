@@ -99,7 +99,7 @@ const EDAs = [
 export default function WikiSection() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">Wiki del Proyecto</h2>
+      <h2 className="text-xl font-bold text-gray-800">Wiki del proyecto</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {wikiContent.map((item) => (
           <div key={item.title} className="bg-white rounded-xl shadow p-5">
