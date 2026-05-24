@@ -22,7 +22,7 @@ const evaluations = [
   },
   {
     title: "Híbrida",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/04.3_evaluation_hibrida.ipynb"
+    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/04.3_evaluation_hybrid.ipynb"
   },
   {
     title: "No alertable",
