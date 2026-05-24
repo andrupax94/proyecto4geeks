@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MIVIA - Sistema de Detección de Sonidos",
+  title: "MIVIA - Sistema de Detección de sonidos",
   description: "Monitoreo Inteligente de Vigilancia con Inteligencia Artificial",
 };
 

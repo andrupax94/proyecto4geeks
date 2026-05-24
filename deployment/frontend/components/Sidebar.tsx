@@ -35,7 +35,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     <aside className="w-64 min-h-screen bg-gray-900 text-white flex flex-col py-6 px-4 gap-2 shadow-lg">
       <div className="mb-6 px-2">
         <h1 className="text-xl font-bold text-blue-400">MIVIA</h1>
-        <p className="text-xs text-gray-500 mt-1">Detección de Sonidos</p>
+        <p className="text-xs text-gray-500 mt-1">Detección de sonidos</p>
       </div>
 
       {sections.map((section) => {
