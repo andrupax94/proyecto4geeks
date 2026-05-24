@@ -104,67 +104,19 @@ const finalDatasetEDAs = [
   },
 ];
 
-const preprocessingAndModeling = [
-  {
-    title: "Preprocesado",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/03.1_preprocessing.ipynb"
-  },
-  {
-    title: "Modelado",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/03.2_modeling.ipynb"
-  },
-];
-
-const evaluations = [
-  {
-    title: "Alertable",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/04.1_evaluation_alertable.ipynb"
-  },
-  {
-    title: "Multiclase",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/04.2_evaluation_multiclase.ipynb"
-  },
-  {
-    title: "Híbrida",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/04.3_evaluation_hibrida.ipynb"
-  },
-  {
-    title: "No alertable",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/04.4_evaluation_no_alertable.ipynb"
-  },
-];
-
-const tests = [
-  {
-    title: "Alertable",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/05.1_inference_test_alertable.ipynb"
-  },
-  {
-    title: "Multiclase",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/05.2_inference_test_multiclase.ipynb"
-  },
-  {
-    title: "Híbrida",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/05.3_inference_test_hibrida.ipynb"
-  },
-  {
-    title: "No alertable",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/05.4_inference_test_no_alertable.ipynb"
-  },
-];
-
 export default function EDAS() {
   return (
     <div className="space-y-6">
+      <h2 className="text-xl font-bold text-gray-800">Análisis Exploratorio de Datos (EDAs)</h2>
       <div className="bg-white rounded-xl shadow p-5">
-        <h2 className="text-xl font-bold text-blue-700">Construcción del dataset</h2>
+        <h2 className="text-base font-semibold text-blue-700 mb-2">Construcción del dataset</h2>
         <p className="text-sm text-gray-600 leading-relaxed">El objetivo de este notebook es explicar de dónde vienen los datos, cuáles datasets combinamos, cómo los unificamos y qué significa cada columna del dataset final.</p>
         <a href="https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/00.1_building_ds.ipynb" className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
           Notebook de construcción del dataset
         </a>
       </div>
       <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-xl font-bold text-blue-700">EDAs (Análisis Exploratorio de Datos)</h3>
+        <h3 className="text-base font-semibold text-blue-700 mb-2">Recopilación de los EDAs</h3>
         <p className="text-sm text-gray-600 leading-relaxed">En este apartado se presentan los análisis exploratorios de los datos utilizados en el proyecto.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <ul className="list-disc list-inside mt-3 space-y-2">
@@ -188,46 +140,10 @@ export default function EDAS() {
         </div>
       </div>
       <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-xl font-bold text-blue-700">EDA del dataset final</h3>
+        <h3 className="text-base font-semibold text-blue-700 mb-2">EDA del dataset final</h3>
         <p className="text-sm text-gray-600 leading-relaxed">Análisis exploratorio del dataset final construido.</p>
         <ul className="list-disc list-inside mt-3 space-y-2">
           {finalDatasetEDAs.map((eda) => (
-            <li key={eda.title}>
-              <a href={eda.link} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
-                {eda.title}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-xl font-bold text-blue-700">Preprocesado y modelado</h3>
-        <ul className="list-disc list-inside mt-3 space-y-2">
-          {preprocessingAndModeling.map((eda) => (
-            <li key={eda.title}>
-              <a href={eda.link} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
-                {eda.title}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-xl font-bold text-blue-700">Evaluaciones</h3>
-        <ul className="list-disc list-inside mt-3 space-y-2">
-          {evaluations.map((eda) => (
-            <li key={eda.title}>
-              <a href={eda.link} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
-                {eda.title}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-xl font-bold text-blue-700">Tests</h3>
-        <ul className="list-disc list-inside mt-3 space-y-2">
-          {tests.map((eda) => (
             <li key={eda.title}>
               <a href={eda.link} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
                 {eda.title}

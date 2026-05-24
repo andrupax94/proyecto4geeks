@@ -70,7 +70,7 @@ export default function Home() {
           <AnimatedChart isVisible={activeChart === "alertable"}>
             <EDAChart
               data={edaData.alertable || []}
-              title="Distribución de Clases Alertables"
+              title="Distribución de clases alertables"
               color="#ef4444"
             />
           </AnimatedChart>
@@ -80,7 +80,7 @@ export default function Home() {
           <AnimatedChart isVisible={activeChart === "no_alertable"}>
             <EDAChart
               data={edaData.no_alertable || []}
-              title="Distribución de Clases No Alertables"
+              title="Distribución de clases no alertables"
               color="#3b82f6"
             />
           </AnimatedChart>
@@ -90,7 +90,7 @@ export default function Home() {
           <AnimatedChart isVisible={activeChart === "source"}>
             <DistributionChart
               data={(edaData.dataset_source_distribution || []).map(item => ({ name: item.source, value: item.count }))}
-              title="Distribución por Fuente de Datos"
+              title="Distribución por fuente de datos"
               dataKeyName="name"
               dataKeyValue="value"
               color="#f59e0b"
@@ -102,7 +102,7 @@ export default function Home() {
           <AnimatedChart isVisible={activeChart === "format"}>
             <DistributionChart
               data={(edaData.audio_format_distribution || []).map(item => ({ name: item.format, value: item.count }))}
-              title="Distribución por Formato de Audio"
+              title="Distribución por formato de audio"
               dataKeyName="name"
               dataKeyValue="value"
               color="#10b981"
@@ -133,7 +133,7 @@ export default function Home() {
           <AnimatedChart isVisible={activeChart === "sample_rate"}>
             <DistributionChart
               data={(edaData.sample_rate_distribution || []).map(item => ({ name: `${item.rate / 1000} kHz`, value: item.count }))}
-              title="Distribución por Frecuencia de Muestreo"
+              title="Distribución por frecuencia de muestreo"
               dataKeyName="name"
               dataKeyValue="value"
               color="#6366f1"
@@ -198,7 +198,7 @@ export default function Home() {
       case "predict":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Predicción de Audio</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Predicción de audio</h2>
             {/* Upload area */}
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -300,7 +300,7 @@ export default function Home() {
       case "eda":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Análisis Exploratorio de Datos (EDA)</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Descripción del dataset</h2>
             <EDASelector activeChart={activeChart} onChartChange={setActiveChart} />
             {renderEDAChart()}
           </div>

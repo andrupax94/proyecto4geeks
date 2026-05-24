@@ -25,7 +25,7 @@ const modelInfo = [
 export default function ModelMetrics() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">Métricas del Modelo</h2>
+      <h2 className="text-xl font-bold text-gray-800">Métricas del modelo</h2>
 
       {/* Radar chart */}
       <div className="bg-white rounded-xl shadow p-6">
@@ -49,7 +49,7 @@ export default function ModelMetrics() {
 
       {/* Tabla de métricas numéricas */}
       <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="text-base font-semibold text-gray-700 mb-4">Detalles del Modelo</h3>
+        <h3 className="text-base font-semibold text-gray-700 mb-4">Detalles del modelo</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {modelInfo.map((item) => (
             <div key={item.label} className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -62,7 +62,7 @@ export default function ModelMetrics() {
 
       {/* Tabla de métricas */}
       <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="text-base font-semibold text-gray-700 mb-4">Resumen de Métricas</h3>
+        <h3 className="text-base font-semibold text-gray-700 mb-4">Resumen de métricas</h3>
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50">

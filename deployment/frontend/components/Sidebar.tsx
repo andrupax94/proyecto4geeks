@@ -10,7 +10,7 @@ interface SidebarProps {
 const sections = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
   { id: "predict", label: "Predicción", icon: "🎙️" },
-  { id: "eda", label: "Análisis EDA", icon: "📈" },
+  { id: "eda", label: "Descripción del dataset", icon: "📈" },
   { id: "metrics", label: "Métricas del modelo", icon: "🧠" },
   {
     id: "wiki",
@@ -19,7 +19,7 @@ const sections = [
     subSections: [
       { id: "wiki", label: "Acerca de", icon: "ℹ️" },
       { id: "edas", label: "EDAs", icon: "🔍" },
-      { id: "preprocesado-y-modelado", label: "Preprocesado y modelado", icon: "⚙️" },
+      { id: "preprocesado-y-modelado", label: "Evaluación de modelos", icon: "⚙️" },
     ],
   },
 ];
