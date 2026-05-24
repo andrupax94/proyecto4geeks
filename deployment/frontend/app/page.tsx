@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/sidebar/Sidebar";
 import DashboardCard from "@/components/DashboardCard";
 import EDAChart from "@/components/EDAChart";
 import AudioTable from "@/components/AudioTable";
@@ -13,6 +13,7 @@ import DistributionChart from "@/components/DistributionChart";
 import EDASelector from "@/components/EDASelector";
 import AnimatedChart from "@/components/AnimatedChart";
 import { predictAudio, getStats, getEDA } from "@/services/api";
+import { subscribeMovilVisible } from "@/services/movil_window_service";
 import { PredictionResponse, DashboardStats, EDAData } from "@/types";
 
 export default function Home() {
@@ -25,11 +26,18 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [isMobileVisible, setIsMobileVisible] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getStats().then(setStats).catch(console.error);
     getEDA().then(setEdaData).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeMovilVisible(setIsMobileVisible);
+    return unsubscribe;
   }, []);
 
   const handleFile = async (file: File) => {
@@ -185,7 +193,6 @@ export default function Home() {
             ) : (
               <div className="text-gray-400 dark:text-gray-500 text-sm">Cargando estadísticas...</div>
             )}
-            {/* Historial de predicciones */}
             <div className="bg-white rounded-xl shadow p-5">
               <h3 className="text-base font-semibold text-gray-700 mb-4">
                 Historial de predicciones
@@ -199,7 +206,6 @@ export default function Home() {
         return (
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white">Predicción de audio</h2>
-            {/* Upload area */}
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -240,7 +246,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Resultado de la última predicción */}
             {lastPrediction && (
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6 space-y-4">
                 <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200">
@@ -269,7 +274,6 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                {/* Top K */}
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3">Top {lastPrediction.top_k.length} clases:</p>
                   <div className="space-y-2">
@@ -329,7 +333,9 @@ export default function Home() {
       <main className="flex-1 p-6 overflow-y-auto">
         {renderSection()}
       </main>
-      <MobileView lastPrediction={lastPrediction} isLoading={isLoading} />
+      {isMobileVisible && (
+        <MobileView lastPrediction={lastPrediction} isLoading={isLoading} />
+      )}
     </div>
   );
 }
