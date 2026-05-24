@@ -15,7 +15,7 @@ import AnimatedChart from "@/components/AnimatedChart";
 import { predictAudio, getStats, getEDA } from "@/services/api";
 import { subscribeMovilVisible } from "@/services/movil_window_service";
 import { PredictionResponse, DashboardStats, EDAData } from "@/types";
-
+import Wallpaper from "@/components/Wallpaper/Wallpaper";
 export default function Home() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [activeChart, setActiveChart] = useState("alertable");
@@ -328,8 +328,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
+    <div className="flex min-h-screen">
+      <div className="logo"></div>
       <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <Wallpaper />
       <main className="flex-1 p-6 overflow-y-auto">
         {renderSection()}
       </main>

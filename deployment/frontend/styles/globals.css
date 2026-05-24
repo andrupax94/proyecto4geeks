@@ -7,57 +7,6 @@
    VARIABLES CSS - LIGHT MODE (defecto)
    ======================================== */
 
-:root {
-  /* Primarios */
-  --color-primary: #3b82f6;
-  --color-primary-light: #60a5fa;
-  --color-primary-dark: #1e40af;
-
-  /* Secundarios */
-  --color-secondary: #b4bbd8;
-  --color-secondary-light: #d9dee6;
-  --color-secondary-dark: #6d28d9;
-
-  /* Neutros */
-  --color-background: #ffffff;
-  --color-surface: #f3f4f6;
-  --color-surface-alt: #e5e7eb;
-  --color-text: #1f2937;
-  --color-text-light: #6b7280;
-  --color-text-lighter: #9ca3af;
-  --color-border: #e5e7eb;
-
-  /* Estados */
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
-  --color-success-dark: #059669;
-
-  --color-warning: #f59e0b;
-  --color-warning-light: #fef3c7;
-  --color-warning-dark: #d97706;
-
-  --color-error: #ef4444;
-  --color-error-light: #fee2e2;
-  --color-error-dark: #dc2626;
-
-  --color-info: #0ea5e9;
-  --color-info-light: #cffafe;
-  --color-info-dark: #0284c7;
-
-  /* Audio */
-  --color-alertable: #ef4444;
-  --color-no-alertable: #3b82f6;
-  --color-audio-source: #f59e0b;
-  --color-audio-format: #10b981;
-  --color-sample-rate: #6366f1;
-
-  /* Sombras */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-
-}
-
 /* ========================================
    VARIABLES CSS - DARK MODE
    ======================================== */

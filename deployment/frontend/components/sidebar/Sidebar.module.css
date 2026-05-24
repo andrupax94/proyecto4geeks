@@ -8,7 +8,7 @@
     height: auto;
     top: 10vh;
     left: 1vw;
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-op);
     z-index: 1000;
     -webkit-border-radius: 40px;
     -moz-border-radius: 40px;
@@ -202,7 +202,7 @@
     width: 100%;
     border-radius: 50px;
     height: 80px;
-    background-color: var(--color-primary-dark);
+    background-color: var(--color-primary-dark-op);
     -webkit-border-radius: 50px;
     -moz-border-radius: 50px;
     -ms-border-radius: 50px;

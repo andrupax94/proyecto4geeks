@@ -1,14 +1,23 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Forte";
+  src: url("/fonts/Forte-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   --color-primary: #1c2f4f;
+  --color-primary-op: #1c2f4f7c;
   --color-primary-light: #1c2f4f;
   --color-primary-dark: #3b4461;
-
+  --color-primary-dark-op: #3b446175;
   --color-secondary: #b4bbd8;
   --color-secondary-light: #c4cfe4;
   --color-secondary-dark: #5b21b6;
 
+  --color-font-primary: #d9dee6;
   --color-background: #0f172a;
   --color-surface: #1e293b;
   --color-surface-alt: #334155;
@@ -47,4 +56,18 @@ body {
 
 main {
   padding-left: 10vw;
+  padding-top: 12vh;
+}
+
+.logo {
+  position: absolute;
+  background-color: var(--color-font-primary);
+  mask-image: url("/assets/icons/SVG/mivialogo.svg");
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-position: center;
+  width: 150px;
+  height: 60px;
+  left: 2vh;
+  top: 1vw;
 }

@@ -1,0 +1,90 @@
+.wallpaper {
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    background-color: #171717;
+    overflow: hidden;
+    z-index: -1;
+
+}
+
+.wallpaper::before {
+    z-index: -2;
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at bottom right, rgba(180, 187, 216, 0.22) 0%, transparent 35%),
+        radial-gradient(circle at top left, rgba(28, 47, 79, 0.35) 0%, transparent 40%),
+        linear-gradient(135deg,
+            #0f1429 0%,
+            #191f3b 45%,
+            #1c2f4f 75%,
+            #141b33 100%);
+    background-position: center center;
+    background-size: cover;
+    opacity: 1;
+}
+
+.glow {
+    z-index: -1;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    background-image: radial-gradient(circle closest-side, rgba(255, 255, 255, 0.025), transparent);
+    pointer-events: none;
+}
+
+.glow1 {
+    width: 150vw;
+    height: 150vh;
+    margin-top: -75vh;
+    margin-left: -75vw;
+    animation: glow1Move 25s linear infinite both;
+}
+
+.glow2 {
+    width: 100vw;
+    height: 100vh;
+    margin-top: -50vh;
+    margin-left: -50vw;
+    animation: glow2Move 25s linear 8.333s infinite both;
+}
+
+.glow3 {
+    width: 120vw;
+    height: 120vh;
+    margin-top: -60vh;
+    margin-left: -60vw;
+    animation: glow3Move 25s linear 16.666s infinite both;
+}
+
+@keyframes glow1Move {
+    from {
+        transform: translate(-100%, 100%);
+    }
+
+    to {
+        transform: translate(100%, -100%);
+    }
+}
+
+@keyframes glow2Move {
+    from {
+        transform: translate(-100%, 0%);
+    }
+
+    to {
+        transform: translate(100%, 100%);
+    }
+}
+
+@keyframes glow3Move {
+    from {
+        transform: translate(100%, 100%);
+    }
+
+    to {
+        transform: translate(0%, -100%);
+    }
+}
