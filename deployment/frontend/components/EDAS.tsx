@@ -107,7 +107,7 @@ const finalDatasetEDAs = [
 export default function EDAS() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">Análisis Exploratorio de Datos (EDAs)</h2>
+
       <div className="bg-white rounded-xl shadow p-5">
         <h2 className="text-base font-semibold text-blue-700 mb-2">Construcción del dataset</h2>
         <p className="text-sm text-gray-600 leading-relaxed">El objetivo de este notebook es explicar de dónde vienen los datos, cuáles datasets combinamos, cómo los unificamos y qué significa cada columna del dataset final.</p>

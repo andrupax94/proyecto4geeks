@@ -52,7 +52,7 @@ const tests = [
 export default function Preprocessing() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">Evaluación de modelos</h2>
+
       <div className="bg-white rounded-xl shadow p-5">
         <h3 className="text-base font-semibold text-blue-700 mb-2">Preprocesado y modelado</h3>
         <ul className="list-disc list-inside mt-3 space-y-2">

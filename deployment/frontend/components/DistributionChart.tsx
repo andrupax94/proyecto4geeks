@@ -3,12 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
 import colors, {
-  LIGHT_COLORS,
-  DARK_COLORS,
-  getColor,
-  getThemeColors,
-  hexToRgba,
-  COLOR_PALETTES,
+  DARK_COLORS
 } from '@/services/colors';
 interface DistributionChartProps {
   data: { name: string; value: number }[];

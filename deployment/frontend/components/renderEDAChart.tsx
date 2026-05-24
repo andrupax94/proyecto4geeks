@@ -1,0 +1,129 @@
+"use client";
+
+import AnimatedChart from "@/components/AnimatedChart";
+import EDAChart from "@/components/EDAChart";
+import DashboardCard from "@/components/DashboardCard";
+import DistributionChart from "@/components/DistributionChart";
+import { EDAData } from "@/types";
+
+type ActiveChart =
+    | "alertable"
+    | "no_alertable"
+    | "source"
+    | "format"
+    | "duration"
+    | "sample_rate";
+
+interface Props {
+    activeChart: ActiveChart;
+    edaData: EDAData | null;
+}
+
+export function renderEDAChart({ activeChart, edaData }: Props) {
+    if (!edaData) {
+        return (
+            <div className="text-gray-400 dark:text-gray-500 text-sm p-10 text-center">
+                Cargando datos del dataset...
+            </div>
+        );
+    }
+
+    switch (activeChart) {
+        case "alertable":
+            return (
+                <AnimatedChart isVisible>
+                    <EDAChart
+                        data={edaData.alertable || []}
+                        title="Distribución de clases alertables"
+                        color="#ef4444"
+                    />
+                </AnimatedChart>
+            );
+
+        case "no_alertable":
+            return (
+                <AnimatedChart isVisible>
+                    <EDAChart
+                        data={edaData.no_alertable || []}
+                        title="Distribución de clases no alertables"
+                        color="#3b82f6"
+                    />
+                </AnimatedChart>
+            );
+
+        case "source":
+            return (
+                <AnimatedChart isVisible>
+                    <DistributionChart
+                        data={(edaData.dataset_source_distribution || []).map((item) => ({
+                            name: item.source,
+                            value: item.count,
+                        }))}
+                        title="Distribución por fuente de datos"
+                        dataKeyName="name"
+                        dataKeyValue="value"
+                        color="#f59e0b"
+                    />
+                </AnimatedChart>
+            );
+
+        case "format":
+            return (
+                <AnimatedChart isVisible>
+                    <DistributionChart
+                        data={(edaData.audio_format_distribution || []).map((item) => ({
+                            name: item.format,
+                            value: item.count,
+                        }))}
+                        title="Distribución por formato de audio"
+                        dataKeyName="name"
+                        dataKeyValue="value"
+                        color="#10b981"
+                    />
+                </AnimatedChart>
+            );
+
+        case "duration":
+            return (
+                <AnimatedChart isVisible>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+                        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-6">
+                            Estadísticas de Duración de Audios (segundos)
+                        </h3>
+                        {edaData.duration_stats ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <DashboardCard title="Media" value={edaData.duration_stats.mean.toFixed(2)} subtitle="segundos" color="purple" />
+                                <DashboardCard title="Mediana" value={edaData.duration_stats.median.toFixed(2)} subtitle="segundos" color="purple" />
+                                <DashboardCard title="Máxima" value={edaData.duration_stats.max.toFixed(2)} subtitle="segundos" color="purple" />
+                                <DashboardCard title="Mínima" value={edaData.duration_stats.min.toFixed(2)} subtitle="segundos" color="purple" />
+                                <DashboardCard title="Desv. Est." value={edaData.duration_stats.std.toFixed(2)} subtitle="segundos" color="purple" />
+                            </div>
+                        ) : (
+                            <p className="text-gray-400 dark:text-gray-500 text-sm">
+                                No hay datos de duración disponibles.
+                            </p>
+                        )}
+                    </div>
+                </AnimatedChart>
+            );
+
+        case "sample_rate":
+            return (
+                <AnimatedChart isVisible>
+                    <DistributionChart
+                        data={(edaData.sample_rate_distribution || []).map((item) => ({
+                            name: `${item.rate / 1000} kHz`,
+                            value: item.count,
+                        }))}
+                        title="Distribución por frecuencia de muestreo"
+                        dataKeyName="name"
+                        dataKeyValue="value"
+                        color="#6366f1"
+                    />
+                </AnimatedChart>
+            );
+
+        default:
+            return null;
+    }
+}

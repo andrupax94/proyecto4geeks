@@ -25,7 +25,7 @@ const modelInfo = [
 export default function ModelMetrics() {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">Métricas del modelo</h2>
+
 
       {/* Radar chart */}
       <div className="bg-white rounded-xl shadow p-6">
