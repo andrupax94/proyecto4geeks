@@ -2,14 +2,47 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Ejecutar como módulo (src)",
+            "name": "Next.js Frontend",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "npm --prefix deployment/frontend run dev",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/deployment/frontend/.next/**/*.js"
+            ]
+        },
+        {
+            "name": "FastAPI Backend",
             "type": "debugpy",
             "request": "launch",
-            // Ejecuta el archivo actual como módulo
-            "module": "src.${relativeFileDirname}/${fileBasenameNoExtension}",
-            // Asegura que la raíz del proyecto es el cwd
+            "module": "uvicorn",
+            "args": [
+                "deployment.backend.app.main:app",
+                "--reload",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8000"
+            ],
+            "jinja": true,
+            "justMyCode": false,
+            "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full Stack",
+            "configurations": [
+                "Next.js Frontend",
+                "FastAPI Backend"
+            ]
         }
     ]
 }

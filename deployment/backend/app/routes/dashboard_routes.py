@@ -4,12 +4,13 @@ from datetime import datetime, timedelta
 import json
 import pandas as pd
 
-from src.utils.config import RAW_DIR
+from src.utils.config import RAW_DIR, FINAL_MODEL_DIR
 
 router = APIRouter(prefix="/dashboard")
 
 CSV_DIR = RAW_DIR / "dataset_finalV2.csv"
 CACHE_FILE = RAW_DIR.parent / "interim" / "dashboard_cache.json"
+METRICS_FILE = FINAL_MODEL_DIR / "metrics.json"
 CACHE_TTL = timedelta(days=1)
 
 
@@ -27,6 +28,17 @@ def _to_bool_series(series: pd.Series) -> pd.Series:
 
     normalized = series.astype(str).str.lower().str.strip()
     return normalized.isin(["true", "1", "yes", "y", "t"])
+
+
+def _load_metrics() -> dict:
+    """Lee las métricas del modelo desde metrics.json generado por el notebook de evaluación."""
+    if not METRICS_FILE.exists():
+        return {"model_accuracy": 0.941, "f1_macro": None, "f1_weighted": None}
+    try:
+        with open(METRICS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"model_accuracy": 0.941, "f1_macro": None, "f1_weighted": None}
 
 
 def _compute_dashboard_data() -> dict:
@@ -112,13 +124,17 @@ def _compute_dashboard_data() -> dict:
             .to_dict(orient="records")
         )
 
+    metrics = _load_metrics()
+
     return {
         "stats": {
             "total_files": total_files,
             "classes": classes,
             "alertable_count": alertable_count,
             "no_alertable_count": no_alertable_count,
-            "model_accuracy": 0.941,  # si lo tienes calculado en otro archivo, lo puedes leer de ahí
+            "model_accuracy": metrics.get("model_accuracy", 0.941),
+            "f1_macro": metrics.get("f1_macro"),
+            "f1_weighted": metrics.get("f1_weighted"),
         },
         "eda": {
             "alertable": alertable_dist,

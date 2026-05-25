@@ -5,6 +5,7 @@ import WikiSection from "@/components/WikiSection";
 import EDAS from "@/components/EDAS";
 import Preprocessing from "@/components/Preprocessing";
 import EDASelector from "@/components/EDASelector";
+import Agradecimientos_referecias from "@/components/agradecimientos_referecias";
 import DashboardSection from "@/components/Dashboard/DashboardSection";
 import PredictSection from "@/components/Predict/PredictSection";
 import { DashboardStats, EDAData, PredictionResponse } from "@/types";
@@ -17,6 +18,7 @@ type ActiveSection =
     | "metrics"
     | "wiki"
     | "edas"
+    | "agradecimientos_referecias"
     | "preprocesado-y-modelado";
 
 type ActiveChart =
@@ -51,6 +53,7 @@ const sectionTitles: Record<ActiveSection, string> = {
     wiki: "Wiki del proyecto",
     edas: "Análisis Exploratorio de Datos (EDAs)",
     "preprocesado-y-modelado": "Evaluación de modelos",
+    agradecimientos_referecias: "Agradecimientos Y Referencias"
 };
 export default function HomeContent({
     activeSection,
@@ -112,6 +115,9 @@ export default function HomeContent({
 
             case "preprocesado-y-modelado":
                 return <Preprocessing />;
+
+            case "agradecimientos_referecias":
+                return <Agradecimientos_referecias />;
 
             default:
                 return null;

@@ -7,6 +7,7 @@ import HomeContent from "@/components/HomeContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useAudioPrediction } from "@/hooks/useAudioPrediction";
 import { useMobileVisibility } from "@/hooks/useMobileVisibility";
+import { GitCommitViewer } from '@/components/GitCommitViewer';
 import MobileView from "@/components/MobileView";
 type ActiveSection =
   | "dashboard"
@@ -76,9 +77,16 @@ export default function Home() {
         dragOver={dragOver}
         setDragOver={setDragOver}
       />
-      {isMobileVisible && (
-        <MobileView lastPrediction={lastPrediction} isLoading={isLoading} />
-      )}
+      {
+        isMobileVisible ? (
+          <MobileView
+            lastPrediction={lastPrediction}
+            isLoading={isLoading}
+          />
+        ) : (
+          <GitCommitViewer />
+        )
+      }
     </div>
 
   );

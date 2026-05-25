@@ -35,6 +35,7 @@ const sections: SidebarSection[] = [
       { id: "wiki", label: "Acerca de", icon: "/assets/icons/SVG/metricas.svg" },
       { id: "edas", label: "EDAs", icon: "/assets/icons/SVG/edalab.svg" },
       { id: "preprocesado-y-modelado", label: "Evaluación de modelos", icon: "/assets/icons/SVG/testeda.svg" },
+      { id: "agradecimientos_referecias", label: "Agradecimientos y Referencias", icon: "/assets/icons/SVG/thanks.svg" },
     ],
   },
   { id: "showMovil", label: "Mostrar Movil", icon: "/assets/icons/SVG/movil.svg" },
