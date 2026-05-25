@@ -1,85 +1,177 @@
 from fastapi import APIRouter
+from pathlib import Path
+from datetime import datetime, timedelta
+import json
+import pandas as pd
 
-router = APIRouter(
-    prefix="/dashboard"
-)
+from src.utils.config import RAW_DIR
+
+router = APIRouter(prefix="/dashboard")
+
+CSV_DIR = RAW_DIR / "dataset_finalV2.csv"
+CACHE_FILE = RAW_DIR.parent / "interim" / "dashboard_cache.json"
+CACHE_TTL = timedelta(days=1)
+
+
+def _load_csv() -> pd.DataFrame:
+    return pd.read_csv(CSV_DIR)
+
+
+def _to_bool_series(series: pd.Series) -> pd.Series:
+    """
+    Convierte una columna a booleanos de forma segura.
+    Acepta True/False, 1/0, "true"/"false", "yes"/"no", etc.
+    """
+    if series.dtype == bool:
+        return series.fillna(False)
+
+    normalized = series.astype(str).str.lower().str.strip()
+    return normalized.isin(["true", "1", "yes", "y", "t"])
+
+
+def _compute_dashboard_data() -> dict:
+    df = _load_csv()
+
+    # Columnas útiles
+    label_col = "human_label" if "human_label" in df.columns else None
+    source_col = "dataset_source" if "dataset_source" in df.columns else None
+    format_col = "audio_format" if "audio_format" in df.columns else None
+    duration_col = "duration" if "duration" in df.columns else None
+    rate_col = "sample_rate" if "sample_rate" in df.columns else None
+    alertable_col = "alertable" if "alertable" in df.columns else None
+
+    alertable_mask = _to_bool_series(df[alertable_col]) if alertable_col else pd.Series([False] * len(df))
+
+    total_files = int(len(df))
+    classes = int(df[label_col].nunique()) if label_col else 0
+    alertable_count = int(alertable_mask.sum())
+    no_alertable_count = int((~alertable_mask).sum())
+
+    # Distribución alertable / no alertable
+    alertable_dist = []
+    no_alertable_dist = []
+
+    if label_col and alertable_col:
+        alertable_dist = (
+            df[alertable_mask][label_col]
+            .value_counts()
+            .rename_axis("class")
+            .reset_index(name="count")
+            .to_dict(orient="records")
+        )
+
+        no_alertable_dist = (
+            df[~alertable_mask][label_col]
+            .value_counts()
+            .rename_axis("class")
+            .reset_index(name="count")
+            .to_dict(orient="records")
+        )
+
+    # Distribución por fuente
+    source_dist = []
+    if source_col:
+        source_dist = (
+            df[source_col]
+            .value_counts()
+            .rename_axis("source")
+            .reset_index(name="count")
+            .to_dict(orient="records")
+        )
+
+    # Distribución por formato
+    audio_format_dist = []
+    if format_col:
+        audio_format_dist = (
+            df[format_col]
+            .value_counts()
+            .rename_axis("format")
+            .reset_index(name="count")
+            .to_dict(orient="records")
+        )
+
+    # Estadísticas de duración
+    duration_stats = {}
+    if duration_col:
+        duration_stats = {
+            "mean": float(df[duration_col].mean()),
+            "median": float(df[duration_col].median()),
+            "min": float(df[duration_col].min()),
+            "max": float(df[duration_col].max()),
+            "std": float(df[duration_col].std()),
+        }
+
+    # Distribución por sample rate
+    sample_rate_dist = []
+    if rate_col:
+        sample_rate_dist = (
+            df[rate_col]
+            .value_counts()
+            .rename_axis("rate")
+            .reset_index(name="count")
+            .to_dict(orient="records")
+        )
+
+    return {
+        "stats": {
+            "total_files": total_files,
+            "classes": classes,
+            "alertable_count": alertable_count,
+            "no_alertable_count": no_alertable_count,
+            "model_accuracy": 0.941,  # si lo tienes calculado en otro archivo, lo puedes leer de ahí
+        },
+        "eda": {
+            "alertable": alertable_dist,
+            "no_alertable": no_alertable_dist,
+            "dataset_source_distribution": source_dist,
+            "audio_format_distribution": audio_format_dist,
+            "duration_stats": duration_stats,
+            "sample_rate_distribution": sample_rate_dist,
+        },
+        "generated_at": datetime.utcnow().isoformat(),
+    }
+
+
+def _read_cache() -> dict | None:
+    if not CACHE_FILE.exists():
+        return None
+
+    try:
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            cached = json.load(f)
+
+        generated_at = datetime.fromisoformat(cached["generated_at"])
+        if datetime.utcnow() - generated_at > CACHE_TTL:
+            return None
+
+        return cached
+    except Exception:
+        return None
+
+
+def _write_cache(data: dict) -> None:
+    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+
+
+def _get_cached_data() -> dict:
+    cached = _read_cache()
+    if cached is not None:
+        return cached
+
+    fresh = _compute_dashboard_data()
+    _write_cache(fresh)
+    return fresh
+
 
 @router.get("/stats")
 def stats():
-    return {
-        "total_files": 129440,
-        "classes": 23,
-        "alertable_count": 66908,
-        "no_alertable_count": 62532,
-        "model_accuracy": 0.941
-    }
+    data = _get_cached_data()
+    return data["stats"]
+
 
 @router.get("/eda")
 def eda():
-    # Retornar distribución de clases real obtenida del dataset_final
-    return {
-        "alertable": [
-            {"class": "traffic", "count": 17581},
-            {"class": "alert_sirem", "count": 10023},
-            {"class": "glass_metal", "count": 7540},
-            {"class": "gun_shot", "count": 6436},
-            {"class": "crying", "count": 6220},
-            {"class": "dog", "count": 4600},
-            {"class": "fight", "count": 3867},
-            {"class": "construction_noise", "count": 3038},
-            {"class": "car_crash", "count": 2870},
-            {"class": "crime", "count": 2550},
-            {"class": "fire", "count": 1663},
-            {"class": "explosion", "count": 520}
-        ],
-        "no_alertable": [
-            {"class": "instrument", "count": 14283},
-            {"class": "domestic_activity", "count": 12052},
-            {"class": "ambient_noise", "count": 8663},
-            {"class": "voice", "count": 6662},
-            {"class": "another_animal", "count": 5444},
-            {"class": "weather", "count": 4168},
-            {"class": "breathing", "count": 3969},
-            {"class": "water", "count": 2513},
-            {"class": "engine", "count": 2217},
-            {"class": "doors", "count": 1474},
-            {"class": "machine", "count": 1087}
-        ],
-        "dataset_source_distribution": [
-            {"source": "zenodo", "count": 51197},
-            {"source": "driver_safety", "count": 47726},
-            {"source": "VOICe", "count": 9843},
-            {"source": "Enhanced_audio_of_accident", "count": 9039},
-            {"source": "UrbanSound8k", "count": 8732},
-            {"source": "emergencysound", "count": 965},
-            {"source": "Guns_DS", "count": 851},
-            {"source": "youtube", "count": 596},
-            {"source": "ESC50", "count": 360},
-            {"source": "audioset", "count": 131}
-        ],
-        "audio_format_distribution": [
-            {"format": "wav", "count": 126686},
-            {"format": "wavex", "count": 2753}
-        ],
-        "duration_stats": {
-            "mean": 4.85776651550151,
-            "median": 2.975,
-            "min": 0.025,
-            "max": 550.249,
-            "std": 7.022001802693392
-        },
-        "sample_rate_distribution": [
-            {"rate": 44100.0, "count": 76147},
-            {"rate": 16000.0, "count": 48367},
-            {"rate": 48000.0, "count": 4099},
-            {"rate": 96000.0, "count": 620},
-            {"rate": 24000.0, "count": 82},
-            {"rate": 22050.0, "count": 45},
-            {"rate": 11025.0, "count": 39},
-            {"rate": 192000.0, "count": 17},
-            {"rate": 8000.0, "count": 12},
-            {"rate": 11024.0, "count": 7},
-            {"rate": 32000.0, "count": 4}
-        ]
-    }
-
+    data = _get_cached_data()
+    return data["eda"]
