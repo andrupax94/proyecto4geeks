@@ -53,7 +53,7 @@ const sectionTitles: Record<ActiveSection, string> = {
     wiki: "Wiki del proyecto",
     edas: "Análisis Exploratorio de Datos (EDAs)",
     "preprocesado-y-modelado": "Evaluación de modelos",
-    agradecimientos_referecias: "Agradecimientos Y Referencias"
+    agradecimientos_referecias: "Agradecimientos y referencias"
 };
 export default function HomeContent({
     activeSection,
