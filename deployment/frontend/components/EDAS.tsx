@@ -76,10 +76,6 @@ const EDAs = [
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.9_EDA_Enhanced_audio_of_accident_and_crime_detection.ipynb",
   },
   {
-    title: "Emergency Vehicle Siren Sounds",
-    link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.10_EDA_Emergency_Vehicle_Siren_Sounds.ipynb",
-  },
-  {
     title: "Vídeos varios (YouTube)",
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/01.11_EDA_youtube.ipynb",
   },
