@@ -29,7 +29,7 @@ export default function ModelMetrics() {
 
       {/* Radar chart */}
       <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="text-base font-semibold text-gray-700 mb-4">Rendimiento General (Modelo Binario)</h3>
+        <h3 className="text-base font-semibold text-gray-700 mb-4">Rendimiento general (modelo binario)</h3>
         <ResponsiveContainer width="100%" height={300}>
           <RadarChart data={metricsData}>
             <PolarGrid />
