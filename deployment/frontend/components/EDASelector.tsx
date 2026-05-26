@@ -20,7 +20,7 @@ const charts = [
 export default function EDASelector({ activeChart, onChartChange }: EDASelectorProps) {
   return (
     <div style={{ backgroundColor: getColor("primary") }} className="bg-white rounded-xl shadow p-6 mb-6">
-      <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">
+      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
         Selecciona un análisis
       </h3>
       <div className="flex flex-wrap gap-3">

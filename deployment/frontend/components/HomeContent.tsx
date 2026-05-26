@@ -125,7 +125,7 @@ export default function HomeContent({
     };
 
     return <main className="flex-1 p-6 overflow-y-auto">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
+        <h2 className="text-xl font-bold text-gray-400 mb-6">
             {sectionTitles[activeSection]}
         </h2>
         {renderSection()}
