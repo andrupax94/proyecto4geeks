@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Wallpaper from "@/components/Wallpaper/Wallpaper";
-import HomeContent from "@/components/HomeContent";
+import HomeContent from "@/components/HomeContent/HomeContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useAudioPrediction } from "@/hooks/useAudioPrediction";
 import { useMobileVisibility } from "@/hooks/useMobileVisibility";
-import { GitCommitViewer } from '@/components/GitCommitViewer';
+import { GitCommitViewer } from '@/components/GitSection/GitCommitViewer';
 import MobileView from "@/components/MobileView";
 type ActiveSection =
   | "dashboard"

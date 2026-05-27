@@ -1,18 +1,14 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Forte";
-  src: url("/fonts/Forte-Regular.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
 
 :root {
+
   --color-primary: #1c2f4f;
   --color-primary-op: #1c2f4f7c;
   --color-primary-light: #1c2f4f;
   --color-primary-dark: #3b4461;
   --color-primary-dark-op: #3b446175;
+  --color-primary-dark-op2: #0f162dad;
   --color-secondary: #b4bbd8;
   --color-secondary-light: #c4cfe4;
   --color-secondary-dark: #5b21b6;
@@ -41,17 +37,38 @@
   --color-info: #06b6d4;
   --color-info-light: #67e8f9;
   --color-info-dark: #0e7490;
+  --gradiente1: linear-gradient(16deg, #151c36 0%, #82b4ff 50%, #c9e8fd 70%, #ffffff 100%);
 }
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(26, 32, 59, 0.15);
+  backdrop-filter: blur(4px);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(67, 85, 124, 0.45);
+  border-radius: 12px;
+  border: rgba(115, 122, 155, 0.45) solid 1px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(26, 32, 59, 0.7);
+}
+
 
 * {
   box-sizing: border-box;
-
+  font-family: var(--font-secondary);
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
 }
 
 main {
@@ -70,4 +87,43 @@ main {
   height: 60px;
   left: 2vh;
   top: 1vw;
+}
+
+.black-box {
+  position: relative;
+  border-radius: 20px;
+  background-color: var(--color-primary-dark-op2);
+  overflow: hidden;
+}
+
+.black-box::after {
+  content: "";
+
+  position: absolute;
+  top: -20%;
+  right: -20%;
+
+  width: 50%;
+  height: 50%;
+
+  background: radial-gradient(circle,
+      rgba(92, 159, 246, 0.45) 0%,
+      rgba(92, 146, 246, 0.18) 35%,
+      transparent 50%);
+
+  filter: blur(40px);
+
+  pointer-events: none;
+}
+
+.gradientText {
+  background: var(--gradiente1);
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  color: transparent;
+
+  text-shadow:
+    0 0 12px rgba(168, 85, 247, 0.35);
 }

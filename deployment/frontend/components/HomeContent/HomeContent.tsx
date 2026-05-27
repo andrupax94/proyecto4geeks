@@ -10,7 +10,7 @@ import DashboardSection from "@/components/Dashboard/DashboardSection";
 import PredictSection from "@/components/Predict/PredictSection";
 import { DashboardStats, EDAData, PredictionResponse } from "@/types";
 import { renderEDAChart } from "@/components/renderEDAChart";
-
+import styles from "./HomeContent.module.css";
 type ActiveSection =
     | "dashboard"
     | "predict"
@@ -55,6 +55,17 @@ const sectionTitles: Record<ActiveSection, string> = {
     "preprocesado-y-modelado": "Evaluación de modelos",
     agradecimientos_referecias: "Agradecimientos y referencias"
 };
+const sectionSubTitles: Record<ActiveSection, string> = {
+    dashboard: "Vista general del sistema",
+    predict: "Sube un audio y obtén predicción",
+    eda: "Explora la estructura del dataset",
+    metrics: "Rendimiento del modelo entrenado",
+    wiki: "Documentación del proyecto",
+    edas: "Visualizaciones y estadísticas clave",
+    "preprocesado-y-modelado": "Comparación y análisis de modelos",
+    agradecimientos_referecias: "Fuentes y colaboradores del proyecto"
+};
+
 export default function HomeContent({
     activeSection,
     activeChart,
@@ -125,9 +136,15 @@ export default function HomeContent({
     };
 
     return <main className="flex-1 p-6 overflow-y-auto">
-        <h2 className="text-xl font-bold text-gray-400 mb-6">
-            {sectionTitles[activeSection]}
-        </h2>
+        <div className={styles.title__container}>
+            <div className={styles.vertical__bar}></div>
+            <div className={styles.title_subcontainer}>
+                <h2 className="gradientText text-xl font-bold text-gray-400 mb-6">
+                    {sectionTitles[activeSection]}
+                </h2>
+                <h5>{sectionSubTitles[activeSection]}</h5>
+            </div>
+        </div>
         {renderSection()}
     </main>;
 }

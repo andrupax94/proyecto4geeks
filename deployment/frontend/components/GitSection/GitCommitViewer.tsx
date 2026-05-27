@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-
+import styles from "./GitCommitViewer.module.css";
 interface Commit {
   hash: string;
   hash_full: string;
@@ -51,11 +51,11 @@ export function GitCommitViewer() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-red-50">
+      <div className={`${styles["error-box"]} flex items-center justify-center h-screen black-box`}>
         <div className="text-center p-6">
           <div className="text-5xl mb-4">⚠️</div>
-          <p className="text-red-600 font-medium mb-2">Error al cargar commits</p>
-          <p className="text-red-400 text-sm">{error}</p>
+          <p className="text-gray-400 font-medium mb-2">Error al cargar commits</p>
+          <p className="text-gray-400 text-sm">{error}</p>
           <p className="text-gray-500 text-xs mt-4">
             Verifica que el backend esté corriendo en localhost:8000
           </p>
@@ -65,13 +65,13 @@ export function GitCommitViewer() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <div className="flex items-center justify-center min-h-screen  from-slate-900 via-slate-800 to-slate-900 p-4 ">
       {/* Contenedor principal 9:16 */}
-      <div className="w-full max-w-sm aspect-[9/16] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200">
+      <div className="w-full max-w-sm aspect-[9/16] black-box overflow-hidden flex flex-col">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-8 text-white">
-          <h1 className="text-2xl font-black tracking-tight">proyecto4geeks</h1>
+        <div className=" from-blue-600 to-cyan-600 px-6 py-8 text-white">
+          <h1 className="text-2xl font-black tracking-tight">Proyecto4geeks-Mivia</h1>
           <p className="text-blue-100 text-sm mt-2 font-medium">Últimos cambios</p>
           <div className="mt-4 flex gap-2 text-xs">
             <span className="bg-white/20 px-3 py-1 rounded-full backdrop-blur">main</span>
@@ -171,7 +171,7 @@ export function GitCommitViewer() {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 px-4 py-4 bg-slate-50 text-center">
+        <div className=" px-4 py-4 text-center">
           <p className="text-xs text-slate-500 font-medium">
             📊 Actualizado en tiempo real
           </p>
