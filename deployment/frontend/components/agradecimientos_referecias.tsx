@@ -55,7 +55,7 @@ const referencias = [
     {
         title: "Fondo animado",
         link: "https://codepen.io/franky/collections/",
-    },                            
+    },
 ];
 
 export default function Agradecimientos_referecias() {
@@ -63,37 +63,37 @@ export default function Agradecimientos_referecias() {
         <div className="space-y-6">
 
             {/* CARD SUPERIOR */}
-            <div className="bg-white rounded-xl shadow p-5">
+            <div className="box black-box rounded-xl shadow p-5">
                 {recursos.map((item) => (
                     <div key={item.title}>
-                        <h3 className="text-base font-semibold text-blue-700 mb-2">
+                        <h3 className="text-base font-semibold text-gray-300 mb-2">
                             {item.title}
                         </h3>
 
-                        <p className="text-sm text-gray-600 leading-relaxed">
+                        <p className="text-sm text-gray-400 leading-relaxed">
                             {item.content}
                         </p>
                     </div>
                 ))}
             </div>
 
-            {/* GRID DE REFERENCIAS */}    
+            {/* GRID DE REFERENCIAS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {referencias.map((item) => (
                     <div
-                        key={item.title} 
-                        className="bg-white rounded-xl shadow p-5"
+                        key={item.title}
+                        className="box blue-box rounded-xl shadow p-5"
+                    >
+                        <a
+                            href={item.link}
+                            className="text-gray-300 hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
                         >
-                            <a
-                                href={item.link} 
-                                className="text-blue-700 hover:underline" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                            >
-                                <h3 className="text-base font-semibold text-blue-700 mb-2">
-                                    {item.title}
-                                </h3>
-                            </a>
+                            <h3 className="text-base font-semibold text-gray-300 mb-2">
+                                {item.title}
+                            </h3>
+                        </a>
                     </div>
                 ))}
             </div>

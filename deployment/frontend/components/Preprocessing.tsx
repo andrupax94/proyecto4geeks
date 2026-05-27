@@ -53,36 +53,36 @@ export default function Preprocessing() {
   return (
     <div className="space-y-6">
 
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-base font-semibold text-blue-700 mb-2">Preprocesado y modelado</h3>
+      <div className="box black-box rounded-xl shadow p-5">
+        <h3 className="text-base font-semibold text-gray-400 mb-2">Preprocesado y modelado</h3>
         <ul className="list-disc list-inside mt-3 space-y-2">
           {preprocessingAndModeling.map((eda) => (
             <li key={eda.title}>
-              <a href={eda.link} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
+              <a href={eda.link} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                 {eda.title}
               </a>
             </li>
           ))}
         </ul>
       </div>
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-base font-semibold text-blue-700 mb-2">Evaluaciones</h3>
+      <div className="box black-box rounded-xl shadow p-5">
+        <h3 className="text-base font-semibold text-gray-400 mb-2">Evaluaciones</h3>
         <ul className="list-disc list-inside mt-3 space-y-2">
           {evaluations.map((eda) => (
             <li key={eda.title}>
-              <a href={eda.link} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
+              <a href={eda.link} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                 {eda.title}
               </a>
             </li>
           ))}
         </ul>
       </div>
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-base font-semibold text-blue-700 mb-2">Tests</h3>
+      <div className="box black-box rounded-xl shadow p-5">
+        <h3 className="text-base font-semibold text-gray-400 mb-2">Tests</h3>
         <ul className="list-disc list-inside mt-3 space-y-2">
           {tests.map((eda) => (
             <li key={eda.title}>
-              <a href={eda.link} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
+              <a href={eda.link} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                 {eda.title}
               </a>
             </li>

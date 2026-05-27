@@ -28,18 +28,18 @@ export default function ModelMetrics() {
 
 
       {/* Radar chart */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="text-base font-semibold text-gray-700 mb-4">Rendimiento general (modelo binario)</h3>
+      <div className="box black-box rounded-xl shadow p-6">
+        <h3 className="text-base font-semibold text-gray-300 mb-4">Rendimiento general (modelo binario)</h3>
         <ResponsiveContainer width="100%" height={300}>
           <RadarChart data={metricsData}>
             <PolarGrid />
             <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
-            <PolarRadiusAxis angle={30} domain={[80, 100]} tick={{ fontSize: 10 }} />
+            <PolarRadiusAxis angle={30} domain={[60, 100]} tick={{ fontSize: 10 }} />
             <Radar
               name="Métricas"
               dataKey="value"
-              stroke="#3b82f6"
-              fill="#3b82f6"
+              stroke="#000000"
+              fill="#ffffff"
               fillOpacity={0.3}
             />
             <Tooltip formatter={(v: number) => [`${v}%`]} />
@@ -48,34 +48,34 @@ export default function ModelMetrics() {
       </div>
 
       {/* Tabla de métricas numéricas */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="text-base font-semibold text-gray-700 mb-4">Detalles del modelo</h3>
+      <div className="box black-box rounded-xl shadow p-6">
+        <h3 className="text-base font-semibold text-gray-300 mb-4">Detalles del modelo</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {modelInfo.map((item) => (
             <div key={item.label} className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-sm text-gray-500">{item.label}</span>
-              <span className="text-sm font-medium text-gray-800">{item.value}</span>
+              <span className="text-sm text-gray-300 font-bold">{item.label}</span>
+              <span className="text-sm font-medium text-gray-300">{item.value}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Tabla de métricas */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="text-base font-semibold text-gray-700 mb-4">Resumen de métricas</h3>
+      <div className="box black-box rounded-xl shadow p-6">
+        <h3 className="text-base font-semibold text-gray-300 mb-4">Resumen de métricas</h3>
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-2 text-left text-gray-600">Métrica</th>
-              <th className="px-4 py-2 text-right text-gray-600">Valor</th>
-              <th className="px-4 py-2 text-left text-gray-600">Barra</th>
+            <tr className="">
+              <th className="px-4 py-2 text-left text-gray-300">Métrica</th>
+              <th className="px-4 py-2 text-right text-gray-300">Valor</th>
+              <th className="px-4 py-2 text-left text-gray-300">Barra</th>
             </tr>
           </thead>
           <tbody>
             {metricsData.map((m) => (
               <tr key={m.metric} className="border-t border-gray-100">
-                <td className="px-4 py-2 font-medium text-gray-700">{m.metric}</td>
-                <td className="px-4 py-2 text-right text-blue-600 font-bold">{m.value}%</td>
+                <td className="px-4 py-2 font-medium text-gray-300">{m.metric}</td>
+                <td className="px-4 py-2 text-right text-blue-400 font-bold">{m.value}%</td>
                 <td className="px-4 py-2">
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div

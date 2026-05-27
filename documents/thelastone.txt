@@ -1,4 +1,3 @@
 mostrar boton de play al momento de recibir una prediccion
 modtrar divicion de datos en el dasborad de las metricas del modelo, binario, multiclase, hibrido,
-wiki mostrar justificacion de uso a futuro
-wiki poner explicacion de archivos de audio, mp3,wav,wavex
+
