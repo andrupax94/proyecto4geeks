@@ -70,9 +70,9 @@ export function renderEDAChart({ activeChart, edaData }: Props) {
         case "format":
             return (
                 <AnimatedChart isVisible>
-                    <div className="box box-black rounded-xl shadow p-5">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
 
-                        <div className="mb-6 text-sm text-gray-100 text-gray-100 leading-relaxed">
+                        <div className="mb-6 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                             <p>
                                 En el proyecto se trabajó principalmente con archivos <strong>WAV</strong>,
                                 un formato de audio sin compresión que conserva mejor la calidad del sonido
