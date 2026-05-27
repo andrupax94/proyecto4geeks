@@ -22,7 +22,7 @@ interface Props {
 export function renderEDAChart({ activeChart, edaData }: Props) {
     if (!edaData) {
         return (
-            <div className="text-gray-400 dark:text-gray-500 text-sm p-10 text-center">
+            <div className="text-gray-400 text-gray-500 text-sm p-10 text-center">
                 Cargando datos del dataset...
             </div>
         );
@@ -71,7 +71,7 @@ export function renderEDAChart({ activeChart, edaData }: Props) {
             return (
                 <AnimatedChart isVisible>
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-                        
+
                         <div className="mb-6 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                             <p>
                                 En el proyecto se trabajó principalmente con archivos <strong>WAV</strong>,
