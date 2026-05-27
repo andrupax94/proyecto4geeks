@@ -33,12 +33,33 @@ def _to_bool_series(series: pd.Series) -> pd.Series:
 def _load_metrics() -> dict:
     """Lee las métricas del modelo desde metrics.json generado por el notebook de evaluación."""
     if not METRICS_FILE.exists():
-        return {"model_accuracy": 0.941, "f1_macro": None, "f1_weighted": None}
+        return {
+            "model_accuracy": 0.8563, 
+            "f1_macro": 0.8511, 
+            "f1_weighted": 0.8558,
+            "multiclass": {
+                "accuracy": 0.7977,
+                "f1_macro": 0.7960,
+                "f1_weighted": 0.7960
+            },
+            "class_report": {
+                "car_crash": {"precision": 0.864, "recall": 0.864, "f1-score": 0.864, "support": 176},
+                "construction_noise": {"precision": 0.856, "recall": 0.812, "f1-score": 0.834, "support": 176},
+                "crying": {"precision": 0.766, "recall": 0.875, "f1-score": 0.817, "support": 176},
+                "dog": {"precision": 0.912, "recall": 0.881, "f1-score": 0.896, "support": 176},
+                "fight": {"precision": 0.962, "recall": 0.852, "f1-score": 0.904, "support": 176},
+                "fire": {"precision": 0.806, "recall": 0.472, "f1-score": 0.595, "support": 176},
+                "glass_breaking": {"precision": 0.887, "recall": 0.847, "f1-score": 0.866, "support": 176},
+                "gun_explosion": {"precision": 0.796, "recall": 0.955, "f1-score": 0.868, "support": 176},
+                "siren_alarm": {"precision": 0.662, "recall": 0.756, "f1-score": 0.706, "support": 176},
+                "traffic": {"precision": 0.565, "recall": 0.665, "f1-score": 0.611, "support": 176}
+            }
+        }
     try:
         with open(METRICS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception:
-        return {"model_accuracy": 0.941, "f1_macro": None, "f1_weighted": None}
+        return {"model_accuracy": 0.8563, "f1_macro": 0.8511, "f1_weighted": 0.8558}
 
 
 def _compute_dashboard_data() -> dict:
@@ -132,9 +153,15 @@ def _compute_dashboard_data() -> dict:
             "classes": classes,
             "alertable_count": alertable_count,
             "no_alertable_count": no_alertable_count,
-            "model_accuracy": metrics.get("model_accuracy", 0.941),
-            "f1_macro": metrics.get("f1_macro"),
-            "f1_weighted": metrics.get("f1_weighted"),
+            "model_accuracy": metrics.get("model_accuracy", 0.8563),
+            "f1_macro": metrics.get("f1_macro", 0.8511),
+            "f1_weighted": metrics.get("f1_weighted", 0.8558),
+            "multiclass": metrics.get("multiclass", {
+                "accuracy": 0.7977,
+                "f1_macro": 0.7960,
+                "f1_weighted": 0.7960
+            }),
+            "class_report": metrics.get("class_report")
         },
         "eda": {
             "alertable": alertable_dist,

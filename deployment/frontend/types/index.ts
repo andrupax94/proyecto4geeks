@@ -22,6 +22,19 @@ export interface DashboardStats {
   alertable_count: number;
   no_alertable_count: number;
   model_accuracy: number;
+  f1_macro: number | null;
+  f1_weighted: number | null;
+  multiclass?: {
+    accuracy: number;
+    f1_macro: number;
+    f1_weighted: number;
+  };
+  class_report?: Record<string, {
+    precision: number;
+    recall: number;
+    "f1-score": number;
+    support: number;
+  }>;
 }
 
 export interface ClassDistributionItem {
