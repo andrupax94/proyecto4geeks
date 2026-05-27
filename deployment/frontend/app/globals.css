@@ -60,6 +60,9 @@
   background: rgba(26, 32, 59, 0.7);
 }
 
+html {
+  color-scheme: dark;
+}
 
 * {
   box-sizing: border-box;

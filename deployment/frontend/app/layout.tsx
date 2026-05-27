@@ -51,7 +51,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${centuryGothic.variable} ${Forte.variable} antialiased`}>{children}</body>
+      <body className={`${centuryGothic.variable} ${Forte.variable} antialiased dark`}>{children}</body>
     </html>
   );
 }
