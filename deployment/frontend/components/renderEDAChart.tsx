@@ -68,20 +68,42 @@ export function renderEDAChart({ activeChart, edaData }: Props) {
             );
 
         case "format":
-            return (
-                <AnimatedChart isVisible>
-                    <DistributionChart
-                        data={(edaData.audio_format_distribution || []).map((item) => ({
-                            name: item.format,
-                            value: item.count,
-                        }))}
-                        title="Distribución por formato de audio"
-                        dataKeyName="name"
-                        dataKeyValue="value"
-                        color="#10b981"
-                    />
-                </AnimatedChart>
-            );
+    return (
+        <AnimatedChart isVisible>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+                
+                <div className="mb-6 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                    <p>
+                        En el proyecto se trabajó principalmente con archivos <strong>WAV</strong>,
+                        un formato de audio sin compresión que conserva mejor la calidad del sonido
+                        y es ampliamente utilizado en inteligencia artificial y procesamiento de audio.
+                        También se utilizaron archivos <strong>WAVEX</strong>, una variante basada en WAV
+                        que incorpora información adicional del audio, y archivos <strong>MP3</strong>,
+                        un formato comprimido más ligero empleado principalmente para pruebas del modelo.
+                    </p>
+
+                    <p className="mt-3">
+                        Como parte del preprocesamiento, todos los audios fueron convertidos de
+                        estéreo a mono, ajustados a una frecuencia de muestreo de <strong>16 kHz</strong>
+                        y normalizados a fragmentos de <strong>5 segundos</strong>. Los audios largos
+                        se dividieron en segmentos y los más cortos fueron rellenados automáticamente
+                        para mantener una duración uniforme en todo el dataset.
+                    </p>
+                </div>
+
+                <DistributionChart
+                    data={(edaData.audio_format_distribution || []).map((item) => ({
+                        name: item.format,
+                        value: item.count,
+                    }))}
+                    title="Distribución por formato de audio"
+                    dataKeyName="name"
+                    dataKeyValue="value"
+                    color="#10b981"
+                />
+            </div>
+        </AnimatedChart>
+    );
 
         case "duration":
             return (
