@@ -30,7 +30,7 @@ const wikiContent: WikiItem[] = [
   {
     title: "Arquitectura del modelo",
     content:
-      "Se utiliza la arquitectura HybridCNN v3 (ImprovedMFCCCNN), que combina espectrogramas mel y waveform crudo mediante dos backbones CNN paralelos. La fusión se realiza por concatenación de embeddings, seguida de un clasificador con LayerNorm.\n\nAunque la evaluación global del sistema (clasificación binaria y multiclase combinadas) presenta una ligera disminución en el rendimiento, la arquitectura híbrida obtiene mejores resultados generales gracias a su capacidad para aprovechar simultáneamente características espectrales y temporales del audio."
+      "Se utiliza la arquitectura HybridCNN v3 (ImprovedMFCCCNN), que combina espectrogramas mel y waveform crudo mediante dos backbones CNN paralelos. La fusión se realiza por concatenación de embeddings, seguida de un clasificador con LayerNorm."
   },
   {
     title: "Preprocesamiento de audio",
@@ -38,9 +38,14 @@ const wikiContent: WikiItem[] = [
       "Los audios se procesan a 16.000 Hz de sample rate, con ventanas de 1.024 puntos (n_fft), hop length de 160, 128 bandas mel y 13 coeficientes MFCC. Se aplica normalización de pico y opcionalmente aumentación de dominio para audios externos.",
   },
   {
-    title: "Visión a Futuro",
+    title: "Rendimiento del sistema",
     content:
-      "Si alguien quiere continuar con este proyecto, las líneas más naturales serían: ampliar el dataset con más fuentes de audio en otros idiomas o regiones geográficas, explorar modelos como CRNN o arquitecturas de audio más recientes como los transformers de audio(Ya que por nuestro hardware nos limiatamos a un modelo CNN), o extender el sistema a detección en tiempo real con dispositivos edge como Raspberry Pi o microcontroladores. El pipeline de construcción que documentamos en el notebook 00 está diseñado precisamente para que incorporar una fuente nueva sea sencillo: solo hay que seguir el mismo esquema de homogeneización que usamos con las 11 fuentes originales.",
+      "Aunque la evaluación global del sistema (clasificación binaria y multiclase combinadas) presenta una ligera disminución en el rendimiento, la arquitectura híbrida obtiene mejores resultados generales gracias a su capacidad para aprovechar simultáneamente características espectrales y temporales del audio.",
+  },
+  {
+    title: "Visión a futuro",
+    content:
+      "Si alguien quiere continuar con este proyecto, las líneas más naturales serían: ampliar el dataset con más fuentes de audio en otros idiomas o regiones geográficas, explorar modelos como CRNN o arquitecturas de audio más recientes como los transformers de audio (ya que en este proyecto nos limitamos a utilizar una arquitectura CNN debido a restricciones de hardware), o extender el sistema a detección en tiempo real con dispositivos edge como Raspberry Pi o microcontroladores. El pipeline de construcción que documentamos en el notebook 00 está diseñado precisamente para que incorporar una fuente nueva sea sencillo: solo hay que seguir el mismo proceso aplicado a las 11 fuentes originales.",
   },
   // {
   //   title: "Construcción del dataset",

@@ -23,13 +23,19 @@ const wikiContent = [
   {
     title: "Arquitectura del modelo",
     content:
-      "Se utiliza la arquitectura HybridCNN v3 (ImprovedMFCCCNN), que combina espectrogramas mel y waveform crudo mediante dos backbones CNN paralelos. La fusión se realiza por concatenación de embeddings, seguida de un clasificador con LayerNorm.\n\nAunque la evaluación global del sistema (clasificación binaria y multiclase combinadas) presenta una ligera disminución en el rendimiento, la arquitectura híbrida obtiene mejores resultados generales gracias a su capacidad para aprovechar simultáneamente características espectrales y temporales del audio.",
+      "Se utiliza la arquitectura HybridCNN v3 (ImprovedMFCCCNN), que combina espectrogramas mel y waveform crudo mediante dos backbones CNN paralelos. La fusión se realiza por concatenación de embeddings, seguida de un clasificador con LayerNorm.",
   },
   {
     title: "Preprocesamiento de audio",
     content:
       "Los audios se procesan a 16.000 Hz de sample rate, con ventanas de 1.024 puntos (n_fft), hop length de 160, 128 bandas mel y 13 coeficientes MFCC. Se aplica normalización de pico y opcionalmente aumentación de dominio para audios externos.",
   },
+  {
+    title: "Rendimiento del sistema",
+    content:
+      "Aunque la evaluación global del sistema (clasificación binaria y multiclase combinadas) presenta una ligera disminución en el rendimiento, la arquitectura híbrida obtiene mejores resultados generales gracias a su capacidad para aprovechar simultáneamente características espectrales y temporales del audio.",
+  },
+
   {
     title: "Construcción del dataset",
     link: "https://github.com/triopeligro/proyecto4geeks/blob/main/notebooks/00.1_building_ds.ipynb",
