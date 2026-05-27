@@ -15,32 +15,38 @@ export default function DashboardSection({ stats, predictions }: Props) {
             {stats ? (
                 <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 box black-box gap-4"].join(" ")}>
                     <DashboardCard
+                        box_class="box box-blue"
                         title="Total Audios"
                         value={stats.total_files.toLocaleString()}
                         subtitle="Dataset de entrenamiento"
-                        color="blue"
-                        icon="🎵"
+                        color="white"
+                        icon="/assets/icons/SVG/nota.svg"
+
                     />
                     <DashboardCard
+                        box_class="box box-blue"
                         title="Clases"
                         value={stats.classes}
                         subtitle="Categorías de sonido"
                         color="purple"
-                        icon="🏷️"
+                        icon="/assets/icons/SVG/clases.svg"
                     />
                     <DashboardCard
+                        box_class="box box-blue"
                         title="Alertables"
                         value={stats.alertable_count.toLocaleString()}
                         subtitle="Sonidos de alerta"
                         color="red"
-                        icon="🚨"
+                        icon="/assets/icons/SVG/alertable.svg"
                     />
                     <DashboardCard
+                        box_class="box box-blue"
                         title="Accuracy"
-                        value={`${(stats.model_accuracy * 100).toFixed(1)}%`}
                         subtitle="Modelo binario"
-                        color="green"
-                        icon="🎯"
+                        value={`${(stats.model_accuracy * 100).toFixed(1)}%`}
+                        currentValue={stats.model_accuracy * 100}
+                        maxValue={100}
+                        icon="/assets/icons/SVG/presision.svg"
                     />
                 </div>
             ) : (

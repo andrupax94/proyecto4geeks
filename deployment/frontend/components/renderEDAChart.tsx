@@ -97,31 +97,31 @@ export function renderEDAChart({ activeChart, edaData }: Props) {
                                     title="Media"
                                     value={edaData.duration_stats.mean.toFixed(2)}
                                     subtitle="segundos"
-                                    color="white"
+                                    color="blue"
                                 />
                                 <DashboardCard
                                     title="Mediana"
                                     value={edaData.duration_stats.median.toFixed(2)}
                                     subtitle="segundos"
-                                    color="white"
+                                    color="blue"
                                 />
                                 <DashboardCard
                                     title="Máxima"
                                     value={edaData.duration_stats.max.toFixed(2)}
                                     subtitle="segundos"
-                                    color="white"
+                                    color="blue"
                                 />
                                 <DashboardCard
                                     title="Mínima"
                                     value={edaData.duration_stats.min.toFixed(2)}
                                     subtitle="segundos"
-                                    color="white"
+                                    color="blue"
                                 />
                                 <DashboardCard
                                     title="Desv. Est."
                                     value={edaData.duration_stats.std.toFixed(2)}
                                     subtitle="segundos"
-                                    color="white"
+                                    color="blue"
                                 />
                             </div>
                         ) : (
