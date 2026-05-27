@@ -12,6 +12,7 @@
   --color-secondary: #b4bbd8;
   --color-secondary-light: #c4cfe4;
   --color-secondary-dark: #5b21b6;
+  --color-secondary-dark-op: #9ab1ffad;
 
   --color-font-primary: #d9dee6;
   --color-background: #0f172a;
@@ -89,14 +90,14 @@ main {
   top: 1vw;
 }
 
-.black-box {
+.box {
   position: relative;
   border-radius: 20px;
   background-color: var(--color-primary-dark-op2);
   overflow: hidden;
 }
 
-.black-box::after {
+.box::after {
   content: "";
 
   position: absolute;
@@ -106,14 +107,56 @@ main {
   width: 50%;
   height: 50%;
 
-  background: radial-gradient(circle,
-      rgba(92, 159, 246, 0.45) 0%,
-      rgba(92, 146, 246, 0.18) 35%,
-      transparent 50%);
 
   filter: blur(40px);
 
   pointer-events: none;
+}
+
+.black-box {
+  background-color: var(--color-primary-op);
+}
+
+.black-box-no-after {
+  background-color: var(--color-primary-op);
+}
+
+.black-box::after {
+  background: radial-gradient(circle, rgb(227 237 251 / 45%) 0%, rgb(86 124 195 / 18%) 35%, #02020200 50%);
+}
+
+.blue-box {
+  background-color: var(--color-primary-dark-op2);
+}
+
+.blue-box-noafter {
+  background-color: var(--color-primary-dark-op2);
+}
+
+.black-box-opnt {
+  background-color: var(--color-primary);
+}
+
+.black-box-opnt::after {
+  background: radial-gradient(circle,
+      rgba(92, 159, 246, 0.45) 0%,
+      rgba(92, 146, 246, 0.18) 35%,
+      transparent 50%);
+}
+
+.blue-box::after {
+  background: radial-gradient(circle,
+      rgba(92, 159, 246, 0.45) 0%,
+      rgba(92, 146, 246, 0.18) 35%,
+      transparent 50%);
+}
+
+.white-box {
+  background-color: var(--color-secondary-dark-op);
+}
+
+.white-box::after {
+  background: radial-gradient(circle, rgb(255 255 255 / 45%) 0%, rgb(255 255 255 / 18%) 35%, #ffffff00 100%);
 }
 
 .gradientText {

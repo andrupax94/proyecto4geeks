@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import styles from "./GitCommitViewer.module.css";
+import { style } from 'framer-motion/client';
 interface Commit {
   hash: string;
   hash_full: string;
@@ -51,7 +52,7 @@ export function GitCommitViewer() {
 
   if (error) {
     return (
-      <div className={`${styles["error-box"]} flex items-center justify-center h-screen black-box`}>
+      <div className={`${styles["error-box"]} flex items-center justify-center h-screen box black-box`}>
         <div className="text-center p-6">
           <div className="text-5xl mb-4">⚠️</div>
           <p className="text-gray-400 font-medium mb-2">Error al cargar commits</p>
@@ -65,9 +66,9 @@ export function GitCommitViewer() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen  from-slate-900 via-slate-800 to-slate-900 p-4 ">
+    <div className={`${styles["commits__container"]} flex items-center justify-center min-h-screen  from-slate-900 via-slate-800 to-slate-900 p-4`}>
       {/* Contenedor principal 9:16 */}
-      <div className="w-full max-w-sm aspect-[9/16] black-box overflow-hidden flex flex-col">
+      <div className="w-full max-w-sm aspect-[9/16] box black-box overflow-hidden flex flex-col">
 
         {/* Header */}
         <div className=" from-blue-600 to-cyan-600 px-6 py-8 text-white">
@@ -84,14 +85,14 @@ export function GitCommitViewer() {
         {/* Commits List */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center box blue-box h-full">
               <div className="text-center">
                 <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-slate-600 text-sm font-medium">Cargando commits...</p>
               </div>
             </div>
           ) : commits.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-center">
+            <div className="flex items-center justify-center blue-box h-full text-center">
               <p className="text-slate-400">No hay commits disponibles</p>
             </div>
           ) : (
@@ -101,11 +102,11 @@ export function GitCommitViewer() {
                 onClick={() => setSelectedCommit(
                   selectedCommit === commit.hash_full ? null : commit.hash_full
                 )}
-                className={`
+                className={`${styles.commit} blue-box
                   relative p-4 rounded-xl cursor-pointer transition-all duration-300
                   ${selectedCommit === commit.hash_full
-                    ? 'bg-blue-50 border-2 border-blue-400 shadow-lg'
-                    : 'bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-blue-300'
+                    ? 'bg-blue-50'
+                    : 'bg-slate-50'
                   }
                 `}
                 style={{

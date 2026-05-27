@@ -3,7 +3,7 @@
 import DashboardCard from "@/components/DashboardCard";
 import AudioTable from "@/components/AudioTable";
 import { DashboardStats, PredictionResponse } from "@/types";
-
+import styles from "./DashboardSection.module.css";
 interface Props {
     stats: DashboardStats | null;
     predictions: PredictionResponse[];
@@ -12,10 +12,8 @@ interface Props {
 export default function DashboardSection({ stats, predictions }: Props) {
     return (
         <div className="space-y-6">
-
-
             {stats ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 box black-box gap-4"].join(" ")}>
                     <DashboardCard
                         title="Total Audios"
                         value={stats.total_files.toLocaleString()}
@@ -51,7 +49,7 @@ export default function DashboardSection({ stats, predictions }: Props) {
                 </div>
             )}
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
+            <div className="box black-box rounded-xl shadow p-5">
                 <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-4">
                     Historial de predicciones
                 </h3>

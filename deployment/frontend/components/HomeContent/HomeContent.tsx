@@ -4,7 +4,7 @@ import ModelMetrics from "@/components/ModelMetrics";
 import WikiSection from "@/components/WikiSection";
 import EDAS from "@/components/EDAS";
 import Preprocessing from "@/components/Preprocessing";
-import EDASelector from "@/components/EDASelector";
+import EDASelector from "@/components/EdaSelector/EDASelector";
 import Agradecimientos_referecias from "@/components/agradecimientos_referecias";
 import DashboardSection from "@/components/Dashboard/DashboardSection";
 import PredictSection from "@/components/Predict/PredictSection";

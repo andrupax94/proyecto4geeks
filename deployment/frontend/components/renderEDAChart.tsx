@@ -86,20 +86,46 @@ export function renderEDAChart({ activeChart, edaData }: Props) {
         case "duration":
             return (
                 <AnimatedChart isVisible>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-                        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-6">
+                    <div className="box black-box p-5 shadow transition-all duration-200 hover:blue-box">
+                        <h3 className="text-base font-semibold text-gray-200 mb-6">
                             Estadísticas de Duración de Audios (segundos)
                         </h3>
+
                         {edaData.duration_stats ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                <DashboardCard title="Media" value={edaData.duration_stats.mean.toFixed(2)} subtitle="segundos" color="purple" />
-                                <DashboardCard title="Mediana" value={edaData.duration_stats.median.toFixed(2)} subtitle="segundos" color="purple" />
-                                <DashboardCard title="Máxima" value={edaData.duration_stats.max.toFixed(2)} subtitle="segundos" color="purple" />
-                                <DashboardCard title="Mínima" value={edaData.duration_stats.min.toFixed(2)} subtitle="segundos" color="purple" />
-                                <DashboardCard title="Desv. Est." value={edaData.duration_stats.std.toFixed(2)} subtitle="segundos" color="purple" />
+                            <div className=" p-4 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <DashboardCard
+                                    title="Media"
+                                    value={edaData.duration_stats.mean.toFixed(2)}
+                                    subtitle="segundos"
+                                    color="white"
+                                />
+                                <DashboardCard
+                                    title="Mediana"
+                                    value={edaData.duration_stats.median.toFixed(2)}
+                                    subtitle="segundos"
+                                    color="white"
+                                />
+                                <DashboardCard
+                                    title="Máxima"
+                                    value={edaData.duration_stats.max.toFixed(2)}
+                                    subtitle="segundos"
+                                    color="white"
+                                />
+                                <DashboardCard
+                                    title="Mínima"
+                                    value={edaData.duration_stats.min.toFixed(2)}
+                                    subtitle="segundos"
+                                    color="white"
+                                />
+                                <DashboardCard
+                                    title="Desv. Est."
+                                    value={edaData.duration_stats.std.toFixed(2)}
+                                    subtitle="segundos"
+                                    color="white"
+                                />
                             </div>
                         ) : (
-                            <p className="text-gray-400 dark:text-gray-500 text-sm">
+                            <p className="text-gray-400 text-sm">
                                 No hay datos de duración disponibles.
                             </p>
                         )}

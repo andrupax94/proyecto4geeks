@@ -3,11 +3,12 @@ import { motion } from "framer-motion";
 import colors, {
   DARK_COLORS, getColor
 } from '@/services/colors';
+import styles from "./EDASelector.module.css";
+import { style } from "framer-motion/client";
 interface EDASelectorProps {
   activeChart: string;
   onChartChange: (chart: string) => void;
 }
-
 const charts = [
   { id: "alertable", label: "Clases alertables", icon: "🚨" },
   { id: "no_alertable", label: "Clases no alertables", icon: "✅" },
@@ -19,8 +20,8 @@ const charts = [
 
 export default function EDASelector({ activeChart, onChartChange }: EDASelectorProps) {
   return (
-    <div style={{ backgroundColor: getColor("primary") }} className="bg-white rounded-xl shadow p-6 mb-6">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+    <div className="box black-box rounded-xl shadow p-6 mb-6">
+      <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
         Selecciona un análisis
       </h3>
       <div className="flex flex-wrap gap-3">
@@ -28,9 +29,9 @@ export default function EDASelector({ activeChart, onChartChange }: EDASelectorP
           <motion.button
             key={chart.id}
             onClick={() => onChartChange(chart.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${activeChart === chart.id
-              ? "bg-blue-600 text-white shadow-lg"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            className={`${styles.selector} px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${activeChart === chart.id
+              ? styles.selecionado + " box white-box shadow-lg"
+              : " box blue-box hover:bg-gray-200"
               }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

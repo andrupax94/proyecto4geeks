@@ -1,0 +1,12 @@
+.selector {
+    opacity: 0.8 !important;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+}
+
+.selector:hover {
+    opacity: 1;
+}
+
+.selecionado {}

@@ -13,10 +13,11 @@ export default function DashboardCard({ title, value, subtitle, color = "blue", 
     red: "border-red-500 bg-red-50 text-red-700",
     yellow: "border-yellow-500 bg-yellow-50 text-yellow-700",
     purple: "border-purple-500 bg-purple-50 text-purple-700",
+    white: "text-gray-100",
   };
 
   return (
-    <div className={`border-l-4 rounded-lg p-5 shadow-sm ${colorMap[color] || colorMap.blue}`}>
+    <div className={`rounded-lg p-5`}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium uppercase tracking-wide opacity-70">{title}</span>
         {icon && <span className="text-2xl">{icon}</span>}
