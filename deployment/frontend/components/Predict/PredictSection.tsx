@@ -71,11 +71,10 @@ export default function PredictSection({
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDropWithAudio}
         onClick={() => fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
-          dragOver
-            ? "border-blue-500 bg-blue-50 bg-blue-900/20"
-            : "border-gray-300 border-gray-600 hover:border-blue-400 hover:bg-gray-50 hover:bg-gray-700/50"
-        }`}
+        className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${dragOver
+          ? "border-blue-500 bg-blue-50 bg-blue-900/20"
+          : "border-gray-300 border-gray-600 hover:border-blue-400 hover:bg-gray-50 hover:bg-gray-700/50"
+          }`}
       >
         <input
           ref={fileInputRef}
@@ -97,7 +96,7 @@ export default function PredictSection({
               <p className="text-gray-600 text-gray-300 font-medium">
                 Arrastra un archivo de audio aquí o haz clic para seleccionar
               </p>
-              <p className="text-xs text-gray-400 text-gray-500">
+              <p className="text-xs text-gray-300">
                 Formatos soportados: .wav, .mp3, .ogg, .flac, .m4a
               </p>
             </>
@@ -108,7 +107,7 @@ export default function PredictSection({
       {/* Audio player */}
       {audioUrl && (
         <div
-          className="flex items-center gap-3 bg-white bg-gray-800 border border-gray-200 border-gray-700 rounded-xl px-4 py-3"
+          className="flex items-center gap-3 box black-box rounded-xl px-4 py-3"
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -155,10 +154,10 @@ export default function PredictSection({
           />
 
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-gray-600 text-gray-300 truncate">
+            <p className="text-sm text-gray-200 truncate">
               {fileInputRef.current?.files?.[0]?.name ?? "archivo de audio"}
             </p>
-            <p className="text-xs text-gray-400 text-gray-500">
+            <p className="text-xs text-gray-300">
               {isPlaying ? "Reproduciendo..." : "Listo para reproducir"}
             </p>
           </div>
@@ -172,65 +171,63 @@ export default function PredictSection({
       )}
 
       {lastPrediction && (
-        <div className="bg-white bg-gray-800 rounded-xl shadow p-6 space-y-4">
-          <h3 className="text-base font-semibold text-gray-700 text-gray-200">
+        <div className="box black-box rounded-xl shadow p-6 space-y-4">
+          <h3 className="text-base font-semibold text-gray-200 text-gray-200">
             Resultado:{" "}
-            <span className="text-gray-500 text-gray-400 font-normal">
+            <span className="text-gray-300 font-normal">
               {lastPrediction.filename}
             </span>
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
-              className={`rounded-xl p-4 text-center ${
-                lastPrediction.is_alertable
-                  ? "bg-red-50 bg-red-900/20 border border-red-200 border-red-800"
-                  : "bg-green-50 bg-green-900/20 border border-green-200 border-green-800"
-              }`}
+              className={`rounded-xl p-4 text-center ${lastPrediction.is_alertable
+                ? "bg-red-50 bg-red-900/20 border border-red-200 border-red-800"
+                : "bg-green-50 bg-green-900/20 border border-green-200 border-green-800"
+                }`}
             >
               <p className="text-3xl mb-2">
                 {lastPrediction.is_alertable ? "🚨" : "✅"}
               </p>
               <p
-                className={`text-lg font-bold ${
-                  lastPrediction.is_alertable
-                    ? "text-red-700 text-red-400"
-                    : "text-green-700 text-green-400"
-                }`}
+                className={`text-lg font-bold ${lastPrediction.is_alertable
+                  ? "text-red-500 text-red-400"
+                  : "text-green-500 text-green-400"
+                  }`}
               >
                 {lastPrediction.is_alertable ? "ALERTABLE" : "NO ALERTABLE"}
               </p>
-              <p className="text-sm text-gray-500 text-gray-400 mt-1">
+              <p className="text-sm text-gray-300 mt-1">
                 Confianza: {(lastPrediction.binary_confidence * 100).toFixed(1)}
                 %
               </p>
             </div>
 
             <div className="bg-blue-50 bg-blue-900/20 border border-blue-200 border-blue-800 rounded-xl p-4 text-center">
-              <p className="text-xs text-gray-500 text-gray-400 uppercase tracking-wide mb-1">
+              <p className="text-xs text-gray-300 uppercase tracking-wide mb-1">
                 Clase detectada
               </p>
-              <p className="text-xl font-bold text-blue-800 text-blue-400 capitalize">
+              <p className="text-xl font-bold text-blue-500 text-blue-400 capitalize">
                 {lastPrediction.prediction.replace(/_/g, " ")}
               </p>
-              <p className="text-sm text-gray-500 text-gray-400 mt-1">
+              <p className="text-sm text-gray-300 mt-1">
                 Confianza: {(lastPrediction.confidence * 100).toFixed(1)}%
               </p>
             </div>
           </div>
 
           <div className="bg-gray-50 bg-gray-700 rounded-lg p-4">
-            <p className="text-sm font-medium text-gray-600 text-gray-300 mb-3">
+            <p className="text-sm font-medium text-gray-100 mb-3">
               Top {lastPrediction.top_k.length} clases:
             </p>
 
             <div className="space-y-2">
               {lastPrediction.top_k.map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500 text-gray-400 w-4">
+                  <span className="text-xs text-gray-300 w-4">
                     {i + 1}.
                   </span>
-                  <span className="text-sm text-gray-700 text-gray-300 capitalize w-40">
+                  <span className="text-sm text-gray-200 text-gray-300 capitalize w-40">
                     {item.label.replace(/_/g, " ")}
                   </span>
 

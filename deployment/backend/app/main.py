@@ -25,6 +25,10 @@ origins = [
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://andreseduardo.ddns.net:80",
+    "http://andreseduardo.ddns.net",
+    "https://andreseduardo.ddns.net:443",
+    "https://andreseduardo.ddns.net",
 ]
 
 app.add_middleware(

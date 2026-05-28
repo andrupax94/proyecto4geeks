@@ -5,6 +5,6 @@
 
     "build": "npm --prefix deployment/frontend run build",
 
-    "start": "npm --prefix deployment/frontend run start -- -p 80"
+    "start": "npm --prefix deployment/frontend run start -- --hostname 127.0.0.1 -p 3000"
   }
 }

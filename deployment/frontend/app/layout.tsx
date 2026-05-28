@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import localFont from "next/font/local";
 
-export const centuryGothic = localFont({
+const centuryGothic = localFont({
   src: [
     {
       path: "./fonts/CenturyGothic-Regular.ttf",
@@ -27,11 +27,11 @@ export const centuryGothic = localFont({
   ],
   variable: "--font-secondary",
 });
-export const Forte = localFont({
+const Forte = localFont({
   src: [
     {
       path: "./fonts/Forte Regular.ttf",
-      weight: "bold",
+      weight: "700",
       style: "normal",
     }
 

@@ -3,7 +3,36 @@ export interface TopKItem {
   label: string;
   confidence: number;
 }
+export interface TrainingHistory {
+  epoch: number[];
 
+  train_loss: number[];
+  val_loss: number[];
+
+  train_acc: number[];
+  val_acc: number[];
+
+  precision: number[];
+  recall: number[];
+  f1: number[];
+
+  auc_roc?: number[];
+
+  lr: number[];
+
+  epoch_time: number[];
+  images_per_sec: number[];
+}
+
+export interface TrainingData {
+  history: TrainingHistory;
+
+  best_epoch: number;
+  best_acc: number;
+
+  model_name?: string;
+  version?: number;
+}
 export interface PredictionResponse {
   filename: string;
   is_alertable: boolean;

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 if(load_dotenv()==False):
     load_dotenv(dotenv_path="./deployment/backend/.env")
 
-router = APIRouter(prefix="/api", tags=["github"])
+router = APIRouter(prefix="/github", tags=["github"])
 
 # Configuración
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")

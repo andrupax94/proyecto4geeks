@@ -4,23 +4,8 @@ import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import styles from "./GitCommitViewer.module.css";
-import { style } from 'framer-motion/client';
-interface Commit {
-  hash: string;
-  hash_full: string;
-  message: string;
-  author: string;
-  email: string;
-  date: string;
-  url: string;
-  files_changed: number;
-  additions: number;
-  deletions: number;
-}
-const API_URL =
-  process.env.NODE_ENV === "development"
-    ? process.env.LOCALAPI || "http://127.0.0.1:8000"
-    : process.env.HTTPAPI || "http://andreseduardo.ddns.net:8000";
+import { getGithubCommits, Commit } from "@/services/api";
+
 export function GitCommitViewer() {
   const [commits, setCommits] = useState<Commit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,16 +17,13 @@ export function GitCommitViewer() {
       try {
         setLoading(true);
 
-        const response = await fetch(API_URL + '/api/commits?limit=12');
+        const commits = await getGithubCommits(12);
 
-        if (!response.ok) throw new Error('Error al obtener commits');
-
-        const data = await response.json();
-        setCommits(data.commits);
+        setCommits(commits);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
-        console.error('Error:', err);
+        setError(err instanceof Error ? err.message : "Error desconocido");
+        console.error("Error:", err);
       } finally {
         setLoading(false);
       }

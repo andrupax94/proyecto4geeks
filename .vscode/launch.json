@@ -15,6 +15,19 @@
             ]
         },
         {
+            "name": "Next.js Frontend Internet",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "npm run start",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/deployment/frontend/.next/**/*.js"
+            ]
+        },
+        {
             "name": "FastAPI Backend",
             "type": "debugpy",
             "request": "launch",
@@ -41,6 +54,13 @@
             "name": "Full Stack",
             "configurations": [
                 "Next.js Frontend",
+                "FastAPI Backend"
+            ]
+        },
+        {
+            "name": "Full Stack Internet",
+            "configurations": [
+                "Next.js Frontend Internet",
                 "FastAPI Backend"
             ]
         }
