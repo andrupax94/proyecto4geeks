@@ -50,15 +50,9 @@ async def get_training_history(target_type: str = "alertable", version: int = 4)
     best_acc: float = ckpt.get("best_acc", None)
     best_epoch: int = ckpt.get("best_epoch", None)
 
-    # Obtener info adicional
-    model_name = f"best_{target_type}_v{version}.pt"
-    
     return {
         "checkpoint_epoch": latest_epoch,
         "best_acc": best_acc,
         "best_epoch": best_epoch,
-        "model_name": model_name,
-        "target_type": target_type,
-        "version": version,
         "history": history,
     }

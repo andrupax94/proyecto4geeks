@@ -1,26 +1,14 @@
 import pickle
 import torch
+import os
 from pathlib import Path
 from src.models.hybrid_cnn_v3 import ImprovedMFCCCNN
+from src.models.hybrid_cnn_v4 import HybridCNNV5
 
 # Ruta base automática
 ROOT_DIR = Path(__file__).resolve().parents[4]
-print(ROOT_DIR)
-
 FINAL_MODEL_DIR = ROOT_DIR / "models" / "final"
 INTERIM_DIR = ROOT_DIR / "data" / "interim" / "processed_dataset"
-
-# Modelo binario
-MODEL_BINARY_PATH = FINAL_MODEL_DIR / "best_alertable_v3.pt"
-LABEL_MAPPING_BINARY = INTERIM_DIR / "label_mapping_alertableV2.pkl"
-
-# Modelo alertable
-MODEL_ALERTABLE_PATH = FINAL_MODEL_DIR / "best_human_label_v6.pt"
-LABEL_MAPPING_ALERTABLE = INTERIM_DIR / "label_mapping_human_labelV2.pkl"
-
-# Modelo no alertable
-MODEL_NO_ALERTABLE_PATH = FINAL_MODEL_DIR / "best_no_alertable_v4.pt"
-LABEL_MAPPING_NO_ALERTABLE = INTERIM_DIR / "label_mapping_human_no_alertableV2.pkl"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DROPOUT = 0.25
@@ -49,33 +37,93 @@ def detect_mode_from_state_dict(state_dict: dict) -> str:
         return "mel_only"
     elif has_mfcc:
         return "mfcc_only"
-    raise ValueError("No se encontraron keys conocidas en el state_dict.")
+    return "mel_only"
 
-def load_model(model_path: Path, num_classes: int, dropout: float, device) -> tuple[ImprovedMFCCCNN, str]:
+def load_model(model_path: Path, num_classes: int, dropout: float, device, target_type: str, version: int) -> tuple[torch.nn.Module, str]:
+    if not model_path.exists():
+        raise FileNotFoundError(f"No se encontró el modelo en {model_path}")
+    
     checkpoint = torch.load(model_path, map_location=device)
-    if isinstance(checkpoint, dict) and "model_state" in checkpoint:
-        state_dict = checkpoint["model_state"]
-    else:
-        state_dict = checkpoint
+    state_dict = checkpoint["model_state"] if isinstance(checkpoint, dict) and "model_state" in checkpoint else checkpoint
     mode = detect_mode_from_state_dict(state_dict)
-    model = ImprovedMFCCCNN(num_classes=num_classes, dropout=dropout, mode=mode).to(device)
+    
+    # Determinar arquitectura
+    use_v5 = False
+    if target_type == "alertable" and version > 3:
+        use_v5 = True
+    elif target_type == "human_label" and version > 6:
+        use_v5 = True
+    elif target_type == "no_alertable" and version > 4:
+        use_v5 = True
+
+    if use_v5:
+        # IMPORTANTE: Determinar si el modelo es binario o multiclase para HybridCNNV5
+        # Miramos el tamaño de la última capa del clasificador en el state_dict
+        classifier_key = "classifier.4.weight" if "classifier.4.weight" in state_dict else "classifier.3.weight"
+        if classifier_key in state_dict:
+            out_features = state_dict[classifier_key].shape[0]
+            task = "binary" if out_features == 1 else "multiclass"
+            # Si es multiclase, num_classes debe coincidir con out_features
+            current_num_classes = out_features if task == "multiclass" else num_classes
+        else:
+            task = "binary"
+            current_num_classes = num_classes
+
+        print(f"🏗️ Cargando HybridCNNV5 | Task: {task} | Classes: {current_num_classes} | Mode: {mode}")
+        model = HybridCNNV5(num_classes=current_num_classes, dropout=dropout, mode=mode, task=task).to(device)
+    else:
+        print(f"🏗️ Cargando ImprovedMFCCCNN | Classes: {num_classes} | Mode: {mode}")
+        model = ImprovedMFCCCNN(num_classes=num_classes, dropout=dropout, mode=mode).to(device)
+        
     model.load_state_dict(state_dict)
     model.eval()
     return model, mode
 
-# Inicializar modelos de forma perezosa (lazy loading) o al arrancar
-print("📦 Cargando modelos y mappings en memoria...")
-try:
-    label2idx_bin, idx2label_bin, num_classes_bin = load_label_mapping(LABEL_MAPPING_BINARY)
-    model_bin, mode_bin = load_model(MODEL_BINARY_PATH, num_classes_bin, DROPOUT, device)
-    
-    label2idx_alert, idx2label_alert, num_classes_alert = load_label_mapping(LABEL_MAPPING_ALERTABLE)
-    model_alert, mode_alert = load_model(MODEL_ALERTABLE_PATH, num_classes_alert, DROPOUT, device)
-    
-    label2idx_noalert, idx2label_noalert, num_classes_noalert = load_label_mapping(LABEL_MAPPING_NO_ALERTABLE)
-    model_noalert, mode_noalert = load_model(MODEL_NO_ALERTABLE_PATH, num_classes_noalert, DROPOUT, device)
-    
-    print("✅ Modelos cargados exitosamente!")
-except Exception as e:
-    print(f"❌ Error cargando modelos: {e}")
-    raise e
+class ModelLoader:
+    def __init__(self):
+        self.device = device
+        self._cache = {}
+
+    def get_binary_model(self, version: int = 3):
+        model_key = f"binary_v{version}"
+        if model_key not in self._cache:
+            path = FINAL_MODEL_DIR / f"best_alertable_v{version}.pt"
+            if not path.exists():
+                path = FINAL_MODEL_DIR / "best_alertable_v3.pt"
+                version = 3
+            
+            mapping_path = INTERIM_DIR / "label_mapping_alertableV2.pkl"
+            l2i, i2l, n_classes = load_label_mapping(mapping_path)
+            model, mode = load_model(path, n_classes, DROPOUT, self.device, "alertable", version)
+            self._cache[model_key] = (model, mode, i2l)
+        return self._cache[model_key]
+
+    def get_alertable_model(self, version: int = 6):
+        model_key = f"alertable_v{version}"
+        if model_key not in self._cache:
+            path = FINAL_MODEL_DIR / f"best_human_label_v{version}.pt"
+            if not path.exists():
+                path = FINAL_MODEL_DIR / "best_human_label_v6.pt"
+                version = 6
+            
+            mapping_path = INTERIM_DIR / "label_mapping_human_labelV2.pkl"
+            l2i, i2l, n_classes = load_label_mapping(mapping_path)
+            model, mode = load_model(path, n_classes, DROPOUT, self.device, "human_label", version)
+            self._cache[model_key] = (model, mode, i2l)
+        return self._cache[model_key]
+
+    def get_no_alertable_model(self, version: int = 4):
+        model_key = f"no_alertable_v{version}"
+        if model_key not in self._cache:
+            path = FINAL_MODEL_DIR / f"best_no_alertable_v{version}.pt"
+            if not path.exists():
+                path = FINAL_MODEL_DIR / "best_no_alertable_v4.pt"
+                version = 4
+            
+            mapping_path = INTERIM_DIR / "label_mapping_human_no_alertableV2.pkl"
+            l2i, i2l, n_classes = load_label_mapping(mapping_path)
+            model, mode = load_model(path, n_classes, DROPOUT, self.device, "no_alertable", version)
+            self._cache[model_key] = (model, mode, i2l)
+        return self._cache[model_key]
+
+loader = ModelLoader()

@@ -1,4 +1,4 @@
-import { PredictionResponse, DashboardStats, EDAData, TrainingData } from "@/types";
+import { PredictionResponse, DashboardStats, EDAData } from "@/types";
 
 // Selección automática del backend según entorno
 const API_URL =
@@ -6,12 +6,8 @@ const API_URL =
     ? process.env.LOCALAPI || "http://127.0.0.1:8000"
     : process.env.HTTPAPI || "http://andreseduardo.ddns.net:8000";
 
-export async function predictAudio(
-  formData: FormData,
-  versionBin: number = 4,
-  versionSpecific: number = 6
-): Promise<PredictionResponse> {
-  const response = await fetch(`${API_URL}/predict?version_bin=${versionBin}&version_specific=${versionSpecific}`, {
+export async function predictAudio(formData: FormData): Promise<PredictionResponse> {
+  const response = await fetch(`${API_URL}/predict`, {
     method: "POST",
     body: formData,
   });
@@ -34,14 +30,6 @@ export async function getEDA(): Promise<EDAData> {
   const response = await fetch(`${API_URL}/dashboard/eda`);
   if (!response.ok) {
     throw new Error(`Error obteniendo EDA: ${response.statusText}`);
-  }
-  return response.json();
-}
-
-export async function getTrainingHistory(targetType: string = "alertable", version: number = 4): Promise<TrainingData> {
-  const response = await fetch(`${API_URL}/training/history?target_type=${targetType}&version=${version}`);
-  if (!response.ok) {
-    throw new Error(`Error obteniendo historial de entrenamiento: ${response.statusText}`);
   }
   return response.json();
 }

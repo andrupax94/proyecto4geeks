@@ -5,7 +5,9 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+
+if(load_dotenv()==False):
+    load_dotenv(dotenv_path="./deployment/backend/.env")
 
 router = APIRouter(prefix="/api", tags=["github"])
 
