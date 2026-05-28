@@ -98,11 +98,11 @@ export default function DashboardSection({ stats, predictions }: Props) {
                         />
                     </div>
 
-                    {/* Fila 3: NUEVA - Desglose por Clase (Multiclase) */}
+                    {/* Fila 3: NUEVA - Desglose por clase (multiclase) */}
                     <div className="box black-box rounded-xl shadow p-5">
-                        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
                             <img src="/assets/icons/SVG/lista.svg" alt="" className="w-5 h-5 invert opacity-80" />
-                            Métricas por Clase (Modelo Multiclase)
+                            Métricas por clase (modelo multiclase)
                         </h3>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left text-gray-300">
@@ -148,7 +148,7 @@ export default function DashboardSection({ stats, predictions }: Props) {
             )}
 
             <div className="box black-box rounded-xl shadow p-5">
-                <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-4">
+                <h3 className="text-base font-semibold text-gray-200 mb-4">
                     Historial de predicciones
                 </h3>
                 <AudioTable predictions={predictions} />
