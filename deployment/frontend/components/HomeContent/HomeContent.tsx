@@ -11,6 +11,7 @@ import PredictSection from "@/components/Predict/PredictSection";
 import { DashboardStats, EDAData, PredictionResponse } from "@/types";
 import { renderEDAChart } from "@/components/renderEDAChart";
 import styles from "./HomeContent.module.css";
+
 type ActiveSection =
     | "dashboard"
     | "predict"
@@ -27,7 +28,8 @@ type ActiveChart =
     | "source"
     | "format"
     | "duration"
-    | "sample_rate";
+    | "sample_rate"
+    | "class_metrics";
 
 interface Props {
     activeSection: ActiveSection;

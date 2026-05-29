@@ -5,10 +5,12 @@ import colors, {
 } from '@/services/colors';
 import styles from "./EDASelector.module.css";
 import { style } from "framer-motion/client";
+
 interface EDASelectorProps {
   activeChart: string;
   onChartChange: (chart: string) => void;
 }
+
 const charts = [
   { id: "alertable", label: "Clases alertables", icon: "🚨" },
   { id: "no_alertable", label: "Clases no alertables", icon: "✅" },
@@ -16,6 +18,7 @@ const charts = [
   { id: "format", label: "Formato de audio", icon: "🎵" },
   { id: "duration", label: "Duración de audios", icon: "⏱️" },
   { id: "sample_rate", label: "Frecuencia de muestreo", icon: "📊" },
+  { id: "class_metrics", label: "Métricas por clase", icon: "📈" },
 ];
 
 export default function EDASelector({ activeChart, onChartChange }: EDASelectorProps) {

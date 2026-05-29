@@ -9,6 +9,7 @@ import { useAudioPrediction } from "@/hooks/useAudioPrediction";
 import { useMobileVisibility } from "@/hooks/useMobileVisibility";
 import { GitCommitViewer } from '@/components/GitSection/GitCommitViewer';
 import MobileView from "@/components/MobileView";
+
 type ActiveSection =
   | "dashboard"
   | "predict"
@@ -16,7 +17,8 @@ type ActiveSection =
   | "metrics"
   | "wiki"
   | "edas"
-  | "preprocesado-y-modelado";
+  | "preprocesado-y-modelado"
+  | "agradecimientos_referecias";
 
 type ActiveChart =
   | "alertable"
@@ -24,7 +26,8 @@ type ActiveChart =
   | "source"
   | "format"
   | "duration"
-  | "sample_rate";
+  | "sample_rate"
+  | "class_metrics";
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState<ActiveSection>("dashboard");
