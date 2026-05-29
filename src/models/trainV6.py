@@ -30,21 +30,21 @@ class CFG:
     # task="binary"
     # target_type = "alertable"
     
-    # batch_size = 48
-    # lr = 2e-4
-    # weight_decay = 2e-4
-    # dropout = 0.30
-    # task="multiclass"
-    # target_type = "human_label"
-    
-    batch_size = 32
+    batch_size = 48
     lr = 2e-4
     weight_decay = 2e-4
     dropout = 0.30
     task="multiclass"
-    target_type = "total"
+    target_type = "human_label"
     
-    epochs = 28
+    # batch_size = 32
+    # lr = 2e-4
+    # weight_decay = 2e-4
+    # dropout = 0.30
+    # task="multiclass"
+    # target_type = "total"
+    
+    epochs = 26
     num_workers = 6
     # ─────────────────────────────────────────────────────────
     # DATASET
@@ -57,7 +57,7 @@ class CFG:
    
     mode = "mel_waveform"
     label_version = 2
-    version = 4
+    version = 6
     checkpoint_dir = CHECKPOINT_DIR / f"{target_type}_V{version}"
 
     # ─────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ class CFG:
     # FOCUS CLASSES
     # ─────────────────────────────────────────────────────────
     # focus_classes: list = ["fire","traffic","siren_alarm"]
-    focus_classes: list = []
+    focus_classes: list = [True]
     focus_loss_weight: float = 3.5
     focus_oversample_factor: float = 2
 
@@ -121,6 +121,7 @@ def save_checkpoint(cfg, model, optimizer, scaler, scheduler, epoch, history, be
     checkpoint_dict = {
         "epoch": epoch,
         "model_state": model.state_dict(),
+        "dropout": cfg.dropout,
         "optimizer_state": optimizer.state_dict(),
         "scheduler_state": scheduler.state_dict() if scheduler is not None else None,
         "history": history,
@@ -421,50 +422,29 @@ def build_loaders(cfg: CFG):
         timeout=0,
     )
 
-    train_labels = collections.Counter(train_ds.df[column_target].tolist())
-    test_labels = collections.Counter(test_ds.df[column_target].tolist())
-
-    print(f"✅ Dataloaders creados correctamente")
-    print(f"Proporciones Train: {train_labels}")
-    print(f"Proporciones Test: {test_labels}")
-
     return train_ds, test_ds, train_loader, test_loader
 
 
-def train_one_epoch(
-    model,
-    loader,
-    optimizer,
-    criterion,
-    device,
-    cfg,
-    epoch,
-    scaler=None,
-    scheduler=None,
-):
+def train_one_epoch(model, loader, optimizer, criterion, device, cfg, epoch, scaler=None, scheduler=None):
     model.train()
-
     total_loss = 0
     y_true, y_pred = [], []
     num_batches = len(loader)
-    batch_times = []
 
     for batch_idx, (batch, labels, _) in enumerate(loader, 1):
-        batch_start = time.time()
-
         if cfg.task == "binary":
             labels = labels.float().unsqueeze(1).to(device, non_blocking=True)
         else:
             labels = labels.long().to(device, non_blocking=True)
+
         mel, mfcc, waveform = prepare_model_inputs(batch, device, cfg.mode)
 
         optimizer.zero_grad(set_to_none=True)
 
-        if cfg.use_amp:
+        if scaler is not None:
             with autocast(device_type="cuda"):
                 outputs = model(mel=mel, mfcc=mfcc, waveform=waveform)
                 loss = criterion(outputs, labels)
-
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -475,7 +455,7 @@ def train_one_epoch(
             optimizer.step()
 
         if scheduler is not None:
-            scheduler.step()
+            scheduler.step(epoch - 1 + batch_idx / num_batches)
 
         total_loss += loss.item()
 
@@ -483,23 +463,18 @@ def train_one_epoch(
             y_true.extend(labels.squeeze(1).long().cpu().numpy())
         else:
             y_true.extend(labels.cpu().numpy())
+        
         preds = model.predict(mel, mfcc, waveform)
         y_pred.extend(preds.cpu().numpy())
-
-        batch_time = time.time() - batch_start
-        batch_times.append(batch_time)
 
         if batch_idx % cfg.print_every == 0:
             avg_loss = total_loss / batch_idx
             avg_acc = accuracy_score(y_true, y_pred)
             current_lr = get_optimizer_lr(optimizer)
-            avg_batch_time = np.mean(batch_times[-cfg.print_every:])
-            img_per_sec = cfg.batch_size / avg_batch_time
 
             print(
                 f"  Epoch {epoch} | Batch {batch_idx}/{num_batches} | "
-                f"Loss: {avg_loss:.4f} | Acc: {avg_acc:.4f} | "
-                f"LR: {current_lr:.2e} | {img_per_sec:.0f} img/s"
+                f"Loss: {avg_loss:.4f} | Acc: {avg_acc:.4f} | LR: {current_lr:.2e}"
             )
 
     epoch_loss = total_loss / num_batches
@@ -683,103 +658,147 @@ def main():
             set_optimizer_lr(optimizer, CFG.resume_lr)
             print(f"🔧 LR forzado manualmente a {CFG.resume_lr:.2e}")
 
-    print("\n🧪 Probando dataloader...")
-    try:
-        t0 = time.time()
-        for batch, labels, filenames in train_loader:
-            dt = time.time() - t0
-            print(f"  ✅ Primer batch en {dt:.2f}s")
-            print(f"     - MEL shape: {batch['mel'].shape}")
-            print(f"     - Labels shape: {labels.shape}")
-            break
-    except Exception as e:
-        print(f"  ❌ Error: {e}")
-        print("  🔧 Reduce num_workers o batch_size")
-        return
-
-    print("\n🔥 INICIANDO ENTRENAMIENTO\n")
-
-    for epoch in range(start_epoch + 1, CFG.epochs + 1):
-        t0 = time.time()
-        current_lr = get_optimizer_lr(optimizer)
-
-        print(f"\n📌 Epoch {epoch}/{CFG.epochs}")
-        print(f"📉 LR: {current_lr:.2e}")
-        print("-" * 70)
-
-        train_loss, train_acc = train_one_epoch(
-            model,
-            train_loader,
-            optimizer,
-            criterion,
-            device,
-            CFG,
-            epoch,
-            scaler=scaler,
-            scheduler=scheduler,
-        )
-
-        val_loss, val_acc, precision, recall, f1, auc_roc = evaluate(
-            model,
-            test_loader,
-            criterion,
-            device,
-            CFG,
-            epoch,
-            focus_indices=focus_indices,
-            label_mapping=train_ds.label_mapping,
-            show_focus_report=bool(focus_indices),
-        )
-
-        dt = time.time() - t0
-        images_per_sec = len(train_loader.dataset) / dt
-
-        history["epoch"].append(epoch)
-        history["train_loss"].append(float(train_loss))
-        history["train_acc"].append(float(train_acc))
-        history["val_loss"].append(float(val_loss))
-        history["val_acc"].append(float(val_acc))
-        history["precision"].append(float(precision))
-        history["recall"].append(float(recall))
-        history["f1"].append(float(f1))
-        history["auc_roc"].append(float(auc_roc) if 'auc_roc' in locals() else 0.0)
-        history["lr"].append(float(current_lr))
-        history["epoch_time"].append(float(dt))
-        history["images_per_sec"].append(float(images_per_sec))
-
-        print("\n📈 RESULTADOS")
-        print(f"Train Loss : {train_loss:.4f}")
-        print(f"Train Acc  : {train_acc:.4f}")
-        print(f"Val Loss   : {val_loss:.4f}")
-        print(f"Val Acc    : {val_acc:.4f}")
-        print(f"Precision  : {precision:.4f}")
-        print(f"Recall     : {recall:.4f}")
-        print(f"F1 Score   : {f1:.4f}")
-        print(f"⏱️ Epoch time: {dt:.1f}s ({images_per_sec:.0f} img/s)")
-
-        if val_acc > best_acc:
-            best_acc = val_acc
-            best_epoch = epoch
-
+    # Lógica de actualización si ya se alcanzó el límite de épocas
+    final_model_path = FINAL_MODEL_DIR / f"best_{CFG.target_type}_v{CFG.version}.pt"
+    if start_epoch >= CFG.epochs:
+        print(f"✅ Se ha alcanzado el límite de épocas ({CFG.epochs}). Verificando modelo final...")
+        if final_model_path.exists():
+            ckpt_final = torch.load(final_model_path, map_location=device)
+            if not isinstance(ckpt_final, dict) or "dropout" not in ckpt_final:
+                print(f"🔧 El modelo final no tiene metadatos de dropout. Actualizando...")
+                os.makedirs(FINAL_MODEL_DIR, exist_ok=True)
+                torch.save(
+                    {
+                        "model_state": model.state_dict(),
+                        "dropout": CFG.dropout,
+                        "target_type": CFG.target_type,
+                        "version": CFG.version,
+                        "task": CFG.task
+                    },
+                    final_model_path
+                )
+                print(f"💾 Modelo final actualizado con dropout: {CFG.dropout}")
+            else:
+                print(f"✅ El modelo final ya contiene metadatos de dropout.")
+        else:
+            print(f"⚠️ No se encontró el modelo final en {final_model_path}. Guardando actual...")
             os.makedirs(FINAL_MODEL_DIR, exist_ok=True)
             torch.save(
-                model.state_dict(),
-                FINAL_MODEL_DIR / f"best_{CFG.target_type}_v{CFG.version}.pt"
+                {
+                    "model_state": model.state_dict(),
+                    "dropout": CFG.dropout,
+                    "target_type": CFG.target_type,
+                    "version": CFG.version,
+                    "task": CFG.task
+                },
+                final_model_path
             )
-            print("💾 Best model updated")
+        
+        print("⏩ Saltando entrenamiento y pasando a evaluación final.")
+    else:
+        print("\n🧪 Probando dataloader...")
+        try:
+            t0 = time.time()
+            for batch, labels, filenames in train_loader:
+                dt = time.time() - t0
+                print(f"  ✅ Primer batch en {dt:.2f}s")
+                print(f"     - MEL shape: {batch['mel'].shape}")
+                print(f"     - Labels shape: {labels.shape}")
+                break
+        except Exception as e:
+            print(f"  ❌ Error: {e}")
+            print("  🔧 Reduce num_workers o batch_size")
+            return
 
-        if epoch % CFG.save_every == 0:
-            save_checkpoint(
-                CFG,
+        print("\n🔥 INICIANDO ENTRENAMIENTO\n")
+
+        for epoch in range(start_epoch + 1, CFG.epochs + 1):
+            t0 = time.time()
+            current_lr = get_optimizer_lr(optimizer)
+
+            print(f"\n📌 Epoch {epoch}/{CFG.epochs}")
+            print(f"📉 LR: {current_lr:.2e}")
+            print("-" * 70)
+
+            train_loss, train_acc = train_one_epoch(
                 model,
+                train_loader,
                 optimizer,
-                scaler,
-                scheduler,
+                criterion,
+                device,
+                CFG,
                 epoch,
-                history,
-                best_acc,
-                best_epoch
+                scaler=scaler,
+                scheduler=scheduler,
             )
+
+            val_loss, val_acc, precision, recall, f1, auc_roc = evaluate(
+                model,
+                test_loader,
+                criterion,
+                device,
+                CFG,
+                epoch,
+                focus_indices=focus_indices,
+                label_mapping=train_ds.label_mapping,
+                show_focus_report=bool(focus_indices),
+            )
+
+            dt = time.time() - t0
+            images_per_sec = len(train_loader.dataset) / dt
+
+            history["epoch"].append(epoch)
+            history["train_loss"].append(float(train_loss))
+            history["train_acc"].append(float(train_acc))
+            history["val_loss"].append(float(val_loss))
+            history["val_acc"].append(float(val_acc))
+            history["precision"].append(float(precision))
+            history["recall"].append(float(recall))
+            history["f1"].append(float(f1))
+            history["auc_roc"].append(float(auc_roc) if 'auc_roc' in locals() else 0.0)
+            history["lr"].append(float(current_lr))
+            history["epoch_time"].append(float(dt))
+            history["images_per_sec"].append(float(images_per_sec))
+
+            print("\n📈 RESULTADOS")
+            print(f"Train Loss : {train_loss:.4f}")
+            print(f"Train Acc  : {train_acc:.4f}")
+            print(f"Val Loss   : {val_loss:.4f}")
+            print(f"Val Acc    : {val_acc:.4f}")
+            print(f"Precision  : {precision:.4f}")
+            print(f"Recall     : {recall:.4f}")
+            print(f"F1 Score   : {f1:.4f}")
+            print(f"⏱️ Epoch time: {dt:.1f}s ({images_per_sec:.0f} img/s)")
+
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_epoch = epoch
+
+                os.makedirs(FINAL_MODEL_DIR, exist_ok=True)
+                torch.save(
+                    {
+                        "model_state": model.state_dict(),
+                        "dropout": CFG.dropout,
+                        "target_type": CFG.target_type,
+                        "version": CFG.version,
+                        "task": CFG.task
+                    },
+                    final_model_path
+                )
+                print("💾 Best model updated")
+
+            if epoch % CFG.save_every == 0:
+                save_checkpoint(
+                    CFG,
+                    model,
+                    optimizer,
+                    scaler,
+                    scheduler,
+                    epoch,
+                    history,
+                    best_acc,
+                    best_epoch
+                )
 
     print("\n🧪 EVALUACIÓN FINAL EN TEST")
 
@@ -790,12 +809,14 @@ def main():
         task=CFG.task,
     ).to(device)
 
-    best_model.load_state_dict(
-        torch.load(
-            FINAL_MODEL_DIR / f"best_{CFG.target_type}_v{CFG.version}.pt",
-            map_location=device
-        )
+    ckpt = torch.load(
+        final_model_path,
+        map_location=device
     )
+    if isinstance(ckpt, dict) and "model_state" in ckpt:
+        best_model.load_state_dict(ckpt["model_state"])
+    else:
+        best_model.load_state_dict(ckpt)
 
     test_loss, test_acc, precision, recall, f1, test_auc_roc = evaluate(
         best_model,

@@ -44,6 +44,16 @@ def load_model(model_path: Path, num_classes: int, dropout: float, device, targe
         raise FileNotFoundError(f"No se encontró el modelo en {model_path}")
     
     checkpoint = torch.load(model_path, map_location=device)
+    
+    # Intentar obtener el dropout del checkpoint si existe
+    loaded_dropout = dropout
+    if isinstance(checkpoint, dict):
+        if "dropout" in checkpoint:
+            loaded_dropout = checkpoint["dropout"]
+            print(f"✅ Dropout cargado desde el modelo: {loaded_dropout}")
+        else:
+            print(f"⚠️ El modelo no contiene dropout guardado, usando valor por defecto: {dropout}")
+            
     state_dict = checkpoint["model_state"] if isinstance(checkpoint, dict) and "model_state" in checkpoint else checkpoint
     mode = detect_mode_from_state_dict(state_dict)
     
@@ -69,11 +79,11 @@ def load_model(model_path: Path, num_classes: int, dropout: float, device, targe
             task = "binary"
             current_num_classes = num_classes
 
-        print(f"🏗️ Cargando HybridCNNV5 | Task: {task} | Classes: {current_num_classes} | Mode: {mode}")
-        model = HybridCNNV5(num_classes=current_num_classes, dropout=dropout, mode=mode, task=task).to(device)
+        print(f"🏗️ Cargando HybridCNNV5 | Task: {task} | Classes: {current_num_classes} | Mode: {mode} | Dropout: {loaded_dropout}")
+        model = HybridCNNV5(num_classes=current_num_classes, dropout=loaded_dropout, mode=mode, task=task).to(device)
     else:
-        print(f"🏗️ Cargando ImprovedMFCCCNN | Classes: {num_classes} | Mode: {mode}")
-        model = ImprovedMFCCCNN(num_classes=num_classes, dropout=dropout, mode=mode).to(device)
+        print(f"🏗️ Cargando ImprovedMFCCCNN | Classes: {num_classes} | Mode: {mode} | Dropout: {loaded_dropout}")
+        model = ImprovedMFCCCNN(num_classes=num_classes, dropout=loaded_dropout, mode=mode).to(device)
         
     model.load_state_dict(state_dict)
     model.eval()
@@ -123,6 +133,32 @@ class ModelLoader:
             mapping_path = INTERIM_DIR / "label_mapping_human_no_alertableV2.pkl"
             l2i, i2l, n_classes = load_label_mapping(mapping_path)
             model, mode = load_model(path, n_classes, DROPOUT, self.device, "no_alertable", version)
+            self._cache[model_key] = (model, mode, i2l)
+        return self._cache[model_key]
+
+    def get_total_model(self, version: int = 4):
+        model_key = f"total_v{version}"
+        if model_key not in self._cache:
+            path = FINAL_MODEL_DIR / f"best_total_v{version}.pt"
+            if not path.exists():
+                # Intentar buscar cualquier versión de total si la v4 no existe
+                available = list(FINAL_MODEL_DIR.glob("best_total_v*.pt"))
+                if available:
+                    path = available[0]
+                else:
+                    return None
+            
+            mapping_path = INTERIM_DIR / "label_mapping_totalV2.pkl"
+            if not mapping_path.exists():
+                # Buscar cualquier mapping de total
+                available_mappings = list(INTERIM_DIR.glob("label_mapping_total*.pkl"))
+                if available_mappings:
+                    mapping_path = available_mappings[0]
+                else:
+                    return None
+
+            l2i, i2l, n_classes = load_label_mapping(mapping_path)
+            model, mode = load_model(path, n_classes, DROPOUT, self.device, "total", version)
             self._cache[model_key] = (model, mode, i2l)
         return self._cache[model_key]
 

@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function DashboardSection({ stats, predictions }: Props) {
+
     const [alertableData, setAlertableData] = useState<TrainingData | null>(null);
     const [humanData, setHumanData] = useState<TrainingData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -42,12 +43,16 @@ export default function DashboardSection({ stats, predictions }: Props) {
     };
 
     const alertableAccuracy = getFinalMetric(alertableData, "val_acc");
+    const alertablef1 = getFinalMetric(alertableData, "f1");
     const humanAccuracy = getFinalMetric(humanData, "val_acc");
     const humanF1 = getFinalMetric(humanData, "f1");
     const humanPrecision = getFinalMetric(humanData, "precision");
     const humanRecall = getFinalMetric(humanData, "recall");
     const humanAuc = getFinalMetric(humanData, "auc_roc");
-
+    const estimatedGlobalAccuracy =
+        alertableAccuracy > 0 && humanAccuracy > 0
+            ? alertableAccuracy * humanAccuracy
+            : null;
     // La accuracy global real no se debe estimar como promedio.
     // Idealmente debe venir calculada desde la evaluación completa del pipeline.
     const globalSystemAccuracy =
@@ -63,7 +68,7 @@ export default function DashboardSection({ stats, predictions }: Props) {
             {stats ? (
                 <>
                     {/* Fila 1: Datos base del dataset */}
-                    <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 box black-box gap-4"].join(" ")}>
+                    <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 gap-4"].join(" ")}>
                         <DashboardCard
                             box_class="box box-blue"
                             title="Total Audios"
@@ -88,6 +93,12 @@ export default function DashboardSection({ stats, predictions }: Props) {
                             color="red"
                             icon="/assets/icons/SVG/alertable.svg"
                         />
+
+
+                    </div>
+
+                    {/* Fila 2: Calidad del modelo multiclase */}
+                    <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 gap-4"].join(" ")}>
                         <DashboardCard
                             box_class="box box-blue"
                             title="Accuracy Binaria"
@@ -97,10 +108,16 @@ export default function DashboardSection({ stats, predictions }: Props) {
                             maxValue={100}
                             icon="/assets/icons/SVG/presision.svg"
                         />
-                    </div>
-
-                    {/* Fila 2: Calidad del modelo multiclase */}
-                    <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 box black-box gap-4"].join(" ")}>
+                        <DashboardCard
+                            box_class="box box-blue"
+                            title="F1 Binaria"
+                            subtitle="Checkpoint: Alertable"
+                            value={formatPct(alertablef1)}
+                            currentValue={alertablef1 * 100}
+                            maxValue={100}
+                            color="green"
+                            icon="/assets/icons/SVG/presision.svg"
+                        />
                         <DashboardCard
                             box_class="box box-blue"
                             title="Accuracy Multiclase"
@@ -113,30 +130,26 @@ export default function DashboardSection({ stats, predictions }: Props) {
                         />
                         <DashboardCard
                             box_class="box box-blue"
-                            title="F1-Score"
+                            title="F1-Score Multiclase"
                             value={humanF1.toFixed(4)}
                             subtitle="Métrica balanceada"
                             color="green"
                             icon="/assets/icons/SVG/metricas.svg"
                         />
+
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <DashboardCard
                             box_class="box box-blue"
-                            title="Precision"
-                            value={humanPrecision.toFixed(4)}
-                            subtitle="Fiabilidad de etiquetas"
-                            color="purple"
-                            icon="/assets/icons/SVG/metricas.svg"
-                        />
-                        <DashboardCard
-                            box_class="box box-blue"
-                            title="Recall"
-                            value={humanRecall.toFixed(4)}
-                            subtitle="Cobertura de clases"
-                            color="yellow"
-                            icon="/assets/icons/SVG/metricas.svg"
+                            title="Accuracy Global"
+                            value={formatPct(estimatedGlobalAccuracy)}
+                            subtitle="Estimación jerárquica"
+                            color="white"
+                            currentValue={(estimatedGlobalAccuracy ?? 0) * 100}
+                            maxValue={100}
+                            icon="/assets/icons/SVG/testeda.svg"
                         />
                     </div>
-
                     {/* Fila 3: Accuracy global real del sistema jerárquico */}
                     <div className="box black-box rounded-xl shadow p-5">
                         <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
@@ -177,24 +190,7 @@ export default function DashboardSection({ stats, predictions }: Props) {
                         </div>
                     </div>
 
-                    {/* Fila 4: Accuracy global real, al final */}
-                    <div className="box black-box rounded-xl shadow p-5">
-                        <h3 className="text-base font-semibold text-gray-200 mb-4">
-                            Accuracy Global del Sistema
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <DashboardCard
-                                box_class="box box-blue"
-                                title="Accuracy Global"
-                                value={formatPct(globalSystemAccuracy)}
-                                subtitle="Pipeline jerárquico completo"
-                                color="white"
-                                currentValue={(globalSystemAccuracy ?? 0) * 100}
-                                maxValue={100}
-                                icon="/assets/icons/SVG/testeda.svg"
-                            />
-                        </div>
-                    </div>
+
                 </>
             ) : (
                 <div className="text-gray-400 dark:text-gray-500 text-sm p-10 text-center animate-pulse">

@@ -34,7 +34,7 @@ export function GitCommitViewer() {
 
   if (error) {
     return (
-      <div className={`${styles["error-box"]} flex items-center justify-center h-screen box black-box`}>
+      <div className={`${styles.error_box} flex items-center justify-center h-screen box black-box`}>
         <div className="text-center p-6">
           <div className="text-5xl mb-4">⚠️</div>
           <p className="text-gray-400 font-medium mb-2">Error al cargar commits</p>

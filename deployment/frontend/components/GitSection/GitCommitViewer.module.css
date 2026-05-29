@@ -1,10 +1,19 @@
-.error-box {
+.error_box {
     height: 80vh;
-    margin: auto 2vw;
+    margin: 0px 2vw;
+    position: relative;
+}
+
+.commits__container {
+    position: relative;
+    top: 0;
+    align-self: flex-start;
 }
 
 .commits__container p {
     color: white;
+    top: 0;
+
 }
 
 .commit {

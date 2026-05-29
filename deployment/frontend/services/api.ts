@@ -25,7 +25,7 @@ const API_URL =
       ? "https://andreseduardo.ddns.net/api"
       : "http://andreseduardo.ddns.net/api";
 const versionBinary = 4
-const versionMultiClass = 7
+const versionMultiClass = 6
 export async function getGithubCommits(limit = 12): Promise<Commit[]> {
   const response = await fetch(
     `${API_URL}/github/commits?limit=${limit}`

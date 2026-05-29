@@ -181,21 +181,29 @@ export default function PredictSection({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
-              className={`rounded-xl p-4 text-center ${lastPrediction.is_alertable
-                ? "bg-red-50 bg-red-900/20 border border-red-200 border-red-800"
-                : "bg-green-50 bg-green-900/20 border border-green-200 border-green-800"
+              className={`rounded-xl p-4 text-center ${lastPrediction.binary_confidence < 0.75 && lastPrediction.binary_confidence > 0.25
+                ? "bg-yellow-50 bg-yellow-900/20 border border-yellow-200 border-yellow-800"
+                : lastPrediction.is_alertable
+                  ? "bg-red-50 bg-red-900/20 border border-red-200 border-red-800"
+                  : "bg-green-50 bg-green-900/20 border border-green-200 border-green-800"
                 }`}
             >
               <p className="text-3xl mb-2">
-                {lastPrediction.is_alertable ? "🚨" : "✅"}
+                {lastPrediction.binary_confidence < 0.75 && lastPrediction.binary_confidence > 0.25
+                  ? "❓"
+                  : lastPrediction.is_alertable ? "🚨" : "✅"}
               </p>
               <p
-                className={`text-lg font-bold ${lastPrediction.is_alertable
-                  ? "text-red-500 text-red-400"
-                  : "text-green-500 text-green-400"
+                className={`text-lg font-bold ${lastPrediction.binary_confidence < 0.75 && lastPrediction.binary_confidence > 0.25
+                  ? "text-yellow-500 text-yellow-400"
+                  : lastPrediction.is_alertable
+                    ? "text-red-500 text-red-400"
+                    : "text-green-500 text-green-400"
                   }`}
               >
-                {lastPrediction.is_alertable ? "ALERTABLE" : "NO ALERTABLE"}
+                {lastPrediction.binary_confidence < 0.75 && lastPrediction.binary_confidence > 0.25
+                  ? "DESCONOCIDO"
+                  : lastPrediction.is_alertable ? "ALERTABLE" : "NO ALERTABLE"}
               </p>
               <p className="text-sm text-gray-300 mt-1">
                 Confianza: {(lastPrediction.binary_confidence * 100).toFixed(1)}
