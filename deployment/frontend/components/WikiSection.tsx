@@ -30,7 +30,12 @@ const wikiContent: WikiItem[] = [
   {
     title: "Arquitectura del modelo",
     content:
-      "Se utiliza la arquitectura HybridCNN v3 (ImprovedMFCCCNN), que combina espectrogramas mel y waveform crudo mediante dos backbones CNN paralelos. La fusión se realiza por concatenación de embeddings, seguida de un clasificador con LayerNorm."
+      "Se utiliza una arquitectura Hibrida CNN Binaria+CNN Multiclase, que combina espectrogramas mel y waveform crudo mediante dos backbones CNN paralelos. La fusión se realiza por concatenación de embeddings, seguida de un clasificador con LayerNorm."
+  },
+  {
+    title: "¿Por qué CNN?",
+    content:
+      "Se optó por una arquitectura basada en CNN debido principalmente a restricciones de hardware y compatibilidad del entorno de entrenamiento. Durante el desarrollo se trabajó con una GPU AMD RX 7600 XT bajo ROCm (gfx1102), donde no existían kernels oficiales suficientemente estables o completos para ejecutar de forma óptima arquitecturas más complejas como CRNN o ciertos modelos recurrentes híbridos. Además, no se disponía de una GPU NVIDIA con suficientes núcleos CUDA y soporte maduro para entrenamientos avanzados de modelos secuenciales de mayor costo computacional. \n\nLas CNN ofrecieron un equilibrio adecuado entre rendimiento, estabilidad y compatibilidad, especialmente para el procesamiento de espectrogramas mel y señales de audio. También permitieron aprovechar aceleración por GPU en ROCm con operaciones más estables en fp16/AMP, evitando múltiples problemas conocidos relacionados con kernels de pérdidas recurrentes y operaciones incompatibles en arquitecturas AMD recientes."
   },
   {
     title: "Preprocesamiento de audio",
@@ -38,9 +43,19 @@ const wikiContent: WikiItem[] = [
       "Los audios se procesan a 16.000 Hz de sample rate, con ventanas de 1.024 puntos (n_fft), hop length de 160, 128 bandas mel y 13 coeficientes MFCC. Se aplica normalización de pico y opcionalmente aumentación de dominio para audios externos.",
   },
   {
-    title: "Rendimiento del sistema",
+    title: "Rendimiento del modelo",
     content:
-      "Aunque la evaluación global del sistema (clasificación binaria y multiclase combinadas) presenta una ligera disminución en el rendimiento, la arquitectura híbrida obtiene mejores resultados generales gracias a su capacidad para aprovechar simultáneamente características espectrales y temporales del audio.",
+      "En la evaluación global del pipeline híbrido se observa una disminución del rendimiento respecto a las métricas individuales de cada submodelo. Este comportamiento es esperado en arquitecturas jerárquicas multi-etapa, ya que el sistema requiere que ambas decisiones (clasificación binaria y clasificación multiclase) sean correctas simultáneamente para considerar una predicción final acertada. Como consecuencia, los errores se propagan entre etapas y el rendimiento compuesto tiende a ser inferior al de cada modelo por separado.",
+  },
+  {
+    title: "Rendimiento en una app",
+    content:
+      "Adicionalmente, el comportamiento del sistema depende significativamente del threshold configurado en el clasificador binario. Por ejemplo, un modo orientado a seguridad puede reducir el threshold para maximizar recall y detectar más eventos potencialmente peligrosos, aunque esto incremente falsos positivos y reduzca la métrica global. En contraste, un modo doméstico o conservador puede elevar el threshold para priorizar precisión y disminuir falsas alarmas.",
+  },
+  {
+    title: "Metricas Multiclase",
+    content:
+      "Ciertas clases multiclase poseen bajo soporte o presentan características acústicas altamente variables, lo que afecta especialmente métricas como F1 macro. Por ello, la evaluación global debe interpretarse considerando el contexto operacional del sistema y no únicamente como una medida absoluta de desempeño.",
   },
   {
     title: "Visión a futuro",

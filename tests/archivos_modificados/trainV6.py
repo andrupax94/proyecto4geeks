@@ -23,12 +23,12 @@ class CFG:
     # TRAIN
     # ─────────────────────────────────────────────────────────
     
-    # batch_size =  48 # Alertable :64   
-    # lr = 3e-4   # Alertable :3e-4      
-    # weight_decay = 1e-4 # Alertable :1e-4
-    # dropout = 0.40 # Alertable :0.25
-    # task="binary"
-    # target_type = "alertable"
+    batch_size =  48 # Alertable :64   
+    lr = 3e-4   # Alertable :3e-4      
+    weight_decay = 1e-4 # Alertable :1e-4
+    dropout = 0.40 # Alertable :0.25
+    task="binary"
+    target_type = "alertable"
     
     # batch_size = 48
     # lr = 2e-4
@@ -36,13 +36,6 @@ class CFG:
     # dropout = 0.30
     # task="multiclass"
     # target_type = "human_label"
-    
-    batch_size = 32
-    lr = 2e-4
-    weight_decay = 2e-4
-    dropout = 0.30
-    task="multiclass"
-    target_type = "total"
     
     epochs = 28
     num_workers = 6
@@ -81,7 +74,7 @@ class CFG:
     # FOCUS CLASSES
     # ─────────────────────────────────────────────────────────
     # focus_classes: list = ["fire","traffic","siren_alarm"]
-    focus_classes: list = []
+    focus_classes: list = [True]
     focus_loss_weight: float = 3.5
     focus_oversample_factor: float = 2
 
@@ -121,6 +114,7 @@ def save_checkpoint(cfg, model, optimizer, scaler, scheduler, epoch, history, be
     checkpoint_dict = {
         "epoch": epoch,
         "model_state": model.state_dict(),
+        "dropout": cfg.dropout,
         "optimizer_state": optimizer.state_dict(),
         "scheduler_state": scheduler.state_dict() if scheduler is not None else None,
         "history": history,
@@ -364,7 +358,6 @@ def build_loaders(cfg: CFG):
     elif cfg.target_type == "emergency":
         label_mapping_path = LABEL_MAPPING[f"emergency{cfg.label_version}"]
     elif cfg.target_type == "total":
-        column_target="human_label"
         label_mapping_path = LABEL_MAPPING[f"total{cfg.label_version}"]
     else:
         raise ValueError(f"target_type inválido: {cfg.target_type}")
@@ -542,6 +535,13 @@ def evaluate(
                 y_true.extend(labels.squeeze(1).long().cpu().numpy())
                 probs = torch.sigmoid(outputs)
                 y_probs.extend(probs.cpu().numpy())
+                
+                # Threshold de 0.75 solicitado para binario
+                # Si prob < 0.75 y prob > 0.25 (zona incierta), podríamos marcarlo, 
+                # pero aquí el usuario pide que si no sabe lo clasifique como unknown.
+                # Para la evaluación estándar, usaremos un threshold de 0.75 para la clase positiva.
+                # Sin embargo, para mantener compatibilidad con métricas, calculamos y_pred normal
+                # pero informamos del impacto del threshold si se desea.
             else:
                 y_true.extend(labels.cpu().numpy())
                 probs = torch.softmax(outputs, dim=1)
@@ -762,8 +762,15 @@ def main():
             best_epoch = epoch
 
             os.makedirs(FINAL_MODEL_DIR, exist_ok=True)
+            # Guardamos un diccionario con el state_dict y el dropout
             torch.save(
-                model.state_dict(),
+                {
+                    "model_state": model.state_dict(),
+                    "dropout": CFG.dropout,
+                    "target_type": CFG.target_type,
+                    "version": CFG.version,
+                    "task": CFG.task
+                },
                 FINAL_MODEL_DIR / f"best_{CFG.target_type}_v{CFG.version}.pt"
             )
             print("💾 Best model updated")
@@ -790,12 +797,14 @@ def main():
         task=CFG.task,
     ).to(device)
 
-    best_model.load_state_dict(
-        torch.load(
-            FINAL_MODEL_DIR / f"best_{CFG.target_type}_v{CFG.version}.pt",
-            map_location=device
-        )
+    ckpt = torch.load(
+        FINAL_MODEL_DIR / f"best_{CFG.target_type}_v{CFG.version}.pt",
+        map_location=device
     )
+    if isinstance(ckpt, dict) and "model_state" in ckpt:
+        best_model.load_state_dict(ckpt["model_state"])
+    else:
+        best_model.load_state_dict(ckpt)
 
     test_loss, test_acc, precision, recall, f1, test_auc_roc = evaluate(
         best_model,

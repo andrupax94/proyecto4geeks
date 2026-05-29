@@ -35,26 +35,34 @@ export default function DashboardSection({ stats, predictions }: Props) {
         fetchRealMetrics();
     }, []);
 
-    // Extraer métricas reales de los checkpoints
-    const getFinalMetric = (data: TrainingData | null, metricKey: keyof any) => {
-        if (!data || !data.history || !data.history[metricKey as keyof typeof data.history]) return 0;
-        const arr = data.history[metricKey as keyof typeof data.history] as number[];
-        return arr.length > 0 ? arr[arr.length - 1] : 0;
+    const getFinalMetric = (data: TrainingData | null, metricKey: string) => {
+        if (!data || !data.history || !(metricKey in data.history)) return 0;
+        const arr = data.history[metricKey as keyof typeof data.history] as number[] | undefined;
+        return arr && arr.length > 0 ? arr[arr.length - 1] : 0;
     };
 
     const alertableAccuracy = getFinalMetric(alertableData, "val_acc");
     const humanAccuracy = getFinalMetric(humanData, "val_acc");
-    const hybridAccuracy = (alertableAccuracy + humanAccuracy) / 2;
-
     const humanF1 = getFinalMetric(humanData, "f1");
     const humanPrecision = getFinalMetric(humanData, "precision");
     const humanRecall = getFinalMetric(humanData, "recall");
+    const humanAuc = getFinalMetric(humanData, "auc_roc");
+
+    // La accuracy global real no se debe estimar como promedio.
+    // Idealmente debe venir calculada desde la evaluación completa del pipeline.
+    const globalSystemAccuracy =
+        typeof (stats as DashboardStats & { global_accuracy?: number } | null)?.global_accuracy === "number"
+            ? (stats as DashboardStats & { global_accuracy?: number }).global_accuracy!
+            : null;
+
+    const formatPct = (value: number | null) =>
+        value === null ? "N/D" : `${(value * 100).toFixed(1)}%`;
 
     return (
         <div className="space-y-6">
             {stats ? (
                 <>
-                    {/* Fila 1: Estadísticas Generales (Basadas en DB + Modelos Reales) */}
+                    {/* Fila 1: Datos base del dataset */}
                     <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 box black-box gap-4"].join(" ")}>
                         <DashboardCard
                             box_class="box box-blue"
@@ -82,29 +90,30 @@ export default function DashboardSection({ stats, predictions }: Props) {
                         />
                         <DashboardCard
                             box_class="box box-blue"
-                            title="Accuracy Real"
+                            title="Accuracy Binaria"
                             subtitle="Checkpoint: Alertable"
-                            value={`${(alertableAccuracy * 100).toFixed(1)}%`}
+                            value={formatPct(alertableAccuracy)}
                             currentValue={alertableAccuracy * 100}
                             maxValue={100}
                             icon="/assets/icons/SVG/presision.svg"
                         />
                     </div>
 
-                    {/* Fila 2: Métricas Dinámicas del Modelo */}
+                    {/* Fila 2: Calidad del modelo multiclase */}
                     <div className={[styles["basic__metrics__container"], "grid grid-cols-2 md:grid-cols-4 box black-box gap-4"].join(" ")}>
                         <DashboardCard
                             box_class="box box-blue"
-                            title="Accuracy Human"
-                            value={`${(humanAccuracy * 100).toFixed(1)}%`}
+                            title="Accuracy Multiclase"
+                            value={formatPct(humanAccuracy)}
                             subtitle="Checkpoint: Human Label"
                             color="blue"
                             currentValue={humanAccuracy * 100}
+                            maxValue={100}
                             icon="/assets/icons/SVG/metricas.svg"
                         />
                         <DashboardCard
                             box_class="box box-blue"
-                            title="F1-Score Human"
+                            title="F1-Score"
                             value={humanF1.toFixed(4)}
                             subtitle="Métrica balanceada"
                             color="green"
@@ -112,24 +121,23 @@ export default function DashboardSection({ stats, predictions }: Props) {
                         />
                         <DashboardCard
                             box_class="box box-blue"
-                            title="Accuracy Híbrido"
-                            value={`${(hybridAccuracy * 100).toFixed(1)}%`}
-                            subtitle="Promedio de modelos"
-                            color="yellow"
-                            currentValue={hybridAccuracy * 100}
-                            icon="/assets/icons/SVG/testeda.svg"
-                        />
-                        <DashboardCard
-                            box_class="box box-blue"
-                            title="Precision Human"
+                            title="Precision"
                             value={humanPrecision.toFixed(4)}
                             subtitle="Fiabilidad de etiquetas"
                             color="purple"
                             icon="/assets/icons/SVG/metricas.svg"
                         />
+                        <DashboardCard
+                            box_class="box box-blue"
+                            title="Recall"
+                            value={humanRecall.toFixed(4)}
+                            subtitle="Cobertura de clases"
+                            color="yellow"
+                            icon="/assets/icons/SVG/metricas.svg"
+                        />
                     </div>
 
-                    {/* Fila 3: Desglose Dinámico (Usando datos de Human Label) */}
+                    {/* Fila 3: Accuracy global real del sistema jerárquico */}
                     <div className="box black-box rounded-xl shadow p-5">
                         <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
                             <img src="/assets/icons/SVG/lista.svg" alt="" className="w-5 h-5 invert opacity-80" />
@@ -146,24 +154,45 @@ export default function DashboardSection({ stats, predictions }: Props) {
                                 </thead>
                                 <tbody className="divide-y divide-gray-700">
                                     {[
-                                        { name: 'Accuracy', val: humanAccuracy },
-                                        { name: 'Precision', val: humanPrecision },
-                                        { name: 'Recall', val: humanRecall },
-                                        { name: 'F1-Score', val: humanF1 },
-                                        { name: 'AUC-ROC', val: getFinalMetric(humanData, "auc_roc") },
+                                        { name: "Accuracy", val: humanAccuracy },
+                                        { name: "Precision", val: humanPrecision },
+                                        { name: "Recall", val: humanRecall },
+                                        { name: "F1-Score", val: humanF1 },
+                                        { name: "AUC-ROC", val: humanAuc },
                                     ].map((m) => (
                                         <tr key={m.name} className="hover:bg-gray-700/30 transition-colors">
                                             <td className="px-4 py-3 font-medium text-gray-100 capitalize">{m.name}</td>
-                                            <td className="px-4 py-3 text-right font-semibold text-blue-400">{(m.val * 100).toFixed(2)}%</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-blue-400">
+                                                {(m.val * 100).toFixed(2)}%
+                                            </td>
                                             <td className="px-4 py-3 text-right">
-                                                <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${m.val > 0.85 ? 'bg-green-900/40 text-green-400' : 'bg-yellow-900/40 text-yellow-400'}`}>
-                                                    {m.val > 0.85 ? 'ÓPTIMO' : 'ESTABLE'}
+                                                <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${m.val > 0.85 ? "bg-green-900/40 text-green-400" : "bg-yellow-900/40 text-yellow-400"}`}>
+                                                    {m.val > 0.85 ? "ÓPTIMO" : "ESTABLE"}
                                                 </span>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    {/* Fila 4: Accuracy global real, al final */}
+                    <div className="box black-box rounded-xl shadow p-5">
+                        <h3 className="text-base font-semibold text-gray-200 mb-4">
+                            Accuracy Global del Sistema
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <DashboardCard
+                                box_class="box box-blue"
+                                title="Accuracy Global"
+                                value={formatPct(globalSystemAccuracy)}
+                                subtitle="Pipeline jerárquico completo"
+                                color="white"
+                                currentValue={(globalSystemAccuracy ?? 0) * 100}
+                                maxValue={100}
+                                icon="/assets/icons/SVG/testeda.svg"
+                            />
                         </div>
                     </div>
                 </>

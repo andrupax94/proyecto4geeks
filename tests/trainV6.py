@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.amp import autocast, GradScaler
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix, roc_auc_score
 
 from src.models.hybrid_cnn_v4 import HybridCNNV5, build_criterion
 from src.utils.config import PROCESSED_METADATA, LABEL_MAPPING, CHECKPOINT_DIR, FINAL_MODEL_DIR
@@ -26,14 +26,19 @@ class CFG:
     batch_size =  48 # Alertable :64   
     lr = 3e-4   # Alertable :3e-4      
     weight_decay = 1e-4 # Alertable :1e-4
-    dropout = 0.35 # Alertable :0.25
+    dropout = 0.40 # Alertable :0.25
+    task="binary"
+    target_type = "alertable"
+    
     # batch_size = 48
     # lr = 2e-4
     # weight_decay = 2e-4
     # dropout = 0.30
-    epochs = 22
+    # task="multiclass"
+    # target_type = "human_label"
+    
+    epochs = 28
     num_workers = 6
-    task="binary"
     # ─────────────────────────────────────────────────────────
     # DATASET
     # ─────────────────────────────────────────────────────────
@@ -41,7 +46,8 @@ class CFG:
     use_scalars = False
     seed = 42
     print_every = 50
-    target_type = "alertable"
+    # target_type = "alertable"
+   
     mode = "mel_waveform"
     label_version = 2
     version = 4
@@ -67,9 +73,10 @@ class CFG:
     # ─────────────────────────────────────────────────────────
     # FOCUS CLASSES
     # ─────────────────────────────────────────────────────────
+    # focus_classes: list = ["fire","traffic","siren_alarm"]
     focus_classes: list = [True]
-    focus_loss_weight: float = 2
-    focus_oversample_factor: float = 1.5
+    focus_loss_weight: float = 3.5
+    focus_oversample_factor: float = 2
 
 
 def set_seed(seed: int):
@@ -164,9 +171,14 @@ def load_latest_checkpoint(cfg, model, optimizer, scaler=None, scheduler=None):
         if torch.cuda.is_available() and rng.get("cuda") is not None:
             torch.cuda.set_rng_state_all(rng["cuda"])
 
+    history = ckpt["history"]
+    # Asegurar que las nuevas métricas existan si se carga un checkpoint antiguo
+    if "auc_roc" not in history:
+        history["auc_roc"] = [0.0] * len(history["epoch"])
+    
     return (
         ckpt["epoch"],
-        ckpt["history"],
+        history,
         ckpt["best_acc"],
         ckpt["best_epoch"]
     )
@@ -502,7 +514,7 @@ def evaluate(
     model.eval()
 
     total_loss = 0
-    y_true, y_pred = [], []
+    y_true, y_pred, y_probs = [], [], []
     num_batches = len(loader)
 
     with torch.inference_mode():
@@ -520,8 +532,13 @@ def evaluate(
 
             if cfg.task == "binary":
                 y_true.extend(labels.squeeze(1).long().cpu().numpy())
+                probs = torch.sigmoid(outputs)
+                y_probs.extend(probs.cpu().numpy())
             else:
                 y_true.extend(labels.cpu().numpy())
+                probs = torch.softmax(outputs, dim=1)
+                y_probs.extend(probs.cpu().numpy())
+            
             preds = model.predict(mel, mfcc, waveform)
             y_pred.extend(preds.cpu().numpy())
             if batch_idx % cfg.print_every == 0:
@@ -543,10 +560,18 @@ def evaluate(
         zero_division=0
     )
 
+    try:
+        if cfg.task == "binary":
+            auc_roc = roc_auc_score(y_true, y_probs)
+        else:
+            auc_roc = roc_auc_score(y_true, y_probs, multi_class="ovr")
+    except:
+        auc_roc = 0.0
+
     if show_focus_report and focus_indices:
         print_focus_class_report(y_true, y_pred, focus_indices, label_mapping)
 
-    return epoch_loss, epoch_acc, precision, recall, f1
+    return epoch_loss, epoch_acc, precision, recall, f1, auc_roc
 
 
 def main():
@@ -624,6 +649,7 @@ def main():
         "precision": [],
         "recall": [],
         "f1": [],
+        "auc_roc": [],
         "lr": [],
         "epoch_time": [],
         "images_per_sec": [],
@@ -685,7 +711,7 @@ def main():
             scheduler=scheduler,
         )
 
-        val_loss, val_acc, precision, recall, f1 = evaluate(
+        val_loss, val_acc, precision, recall, f1, auc_roc = evaluate(
             model,
             test_loader,
             criterion,
@@ -708,6 +734,7 @@ def main():
         history["precision"].append(float(precision))
         history["recall"].append(float(recall))
         history["f1"].append(float(f1))
+        history["auc_roc"].append(float(auc_roc) if 'auc_roc' in locals() else 0.0)
         history["lr"].append(float(current_lr))
         history["epoch_time"].append(float(dt))
         history["images_per_sec"].append(float(images_per_sec))
@@ -762,7 +789,7 @@ def main():
         )
     )
 
-    test_loss, test_acc, precision, recall, f1 = evaluate(
+    test_loss, test_acc, precision, recall, f1, test_auc_roc = evaluate(
         best_model,
         test_loader,
         criterion,
